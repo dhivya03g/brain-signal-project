@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Brain Signal Digital Twin</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="container">
+    <h1>🧠 Brain Signal Monitoring Dashboard</h1>
+
+    <!-- EEG Value -->
+    <div class="card">
+        <h2>EEG Value</h2>
+        <p class="eeg">{{ eeg }}</p>
+    </div>
+
+    <!-- Status -->
+    <div class="card">
+        <h2>Status</h2>
+        <p class="status {% if 'Abnormal' in status %}abnormal{% else %}normal{% endif %}">
+            {{ status }}
+        </p>
+    </div>
+
+    <!-- Model Accuracy -->
+    <div class="card">
+        <h2>Model Accuracy</h2>
+        <p class="accuracy">{{ (accuracy * 100) | round(2) }} %</p>
+    </div>
+
+    <!-- Graph -->
+    <div class="card">
+        <h2>Live EEG Graph</h2>
+        <canvas id="eegChart"></canvas>
+    </div>
+
+    <!-- Digital Twin -->
+    <div class="card">
+        <h2>Digital Twin Brain Status</h2>
+        <div class="brain {% if 'Abnormal' in status %}brain-alert{% else %}brain-normal{% endif %}"></div>
+    </div>
+
+</div>
+
+<script>
+    const eegData = {{ history | tojson }};
+    const ctx = document.getElementById('eegChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: eegData.map((_, i) => i + 1),
+            datasets: [{
+                label: 'EEG Signal',
+                data: eegData,
+                borderColor: 'cyan',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.3
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    min: 50,
+                    max: 130
+                }
+            }
+        }
+    });
+
+    const statusText = "{{ status }}";
+    if (statusText.includes("Abnormal")) {
+        alert("🚨 Emergency Alert! Abnormal Brain Activity Detected!");
+    }
+
+    // Auto refresh every 2 seconds
+    
+</script>
+setInterval(async function() {
+    const response = await fetch('/api/eeg');
+    const data = await response.json();
+
+    // Update EEG value
+    document.querySelector('.eeg').innerText = data.eeg_value;
+
+    // Update Status
+    document.querySelector('.status').innerText = data.status;
+
+    // Update Graph
+    eegData.push(data.eeg_value);
+    if (eegData.length > 20) eegData.shift();
+    chart.update();
+
+}, 2000);
+
+</body>
+</html>
