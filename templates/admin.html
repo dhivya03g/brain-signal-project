@@ -1,149 +1,99 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin - Brain Signal AI</title>
-
+    <title>Admin Dashboard</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Segoe UI", sans-serif;
-        }
-
         body {
-            min-height: 100vh;
+            margin: 0;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            padding: 40px;
+            font-family: 'Segoe UI', sans-serif;
             color: white;
+            padding: 30px;
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 30px;
-            font-size: 28px;
         }
 
-        .logout {
-            position: absolute;
-            right: 40px;
-            top: 30px;
+        .top-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        a {
             color: cyan;
+            margin: 0 10px;
             text-decoration: none;
-            font-weight: bold;
-            cursor: pointer;
         }
 
-        .logout:hover {
+        a:hover {
             text-decoration: underline;
-        }
-
-        .table-container {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 0 25px rgba(0,255,255,0.3);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
             text-align: center;
         }
 
         th {
-            padding: 15px;
             background: rgba(0,255,255,0.2);
-            font-weight: bold;
         }
 
-        td {
-            padding: 12px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-
-        tr:hover {
-            background: rgba(0,255,255,0.1);
+        tr:nth-child(even) {
+            background: rgba(255,255,255,0.05);
         }
 
         .normal {
             color: #00ff99;
-            font-weight: bold;
         }
 
         .abnormal {
             color: #ff4d4d;
-            font-weight: bold;
-        }
-
-        .risk-high {
-            color: #ff4d4d;
-            font-weight: bold;
-        }
-
-        .risk-low {
-            color: #00ff99;
-            font-weight: bold;
-        }
-
-        .empty-message {
-            text-align: center;
-            padding: 20px;
-            font-size: 16px;
-            opacity: 0.7;
         }
     </style>
 </head>
-
 <body>
-
-<a href="{{ url_for('logout') }}" class="logout">Logout</a>
 
 <h1>🧠 Admin Monitoring Dashboard</h1>
 
-<div class="table-container">
-
-    {% if records and records|length > 0 %}
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>EEG Value</th>
-                    <th>Status</th>
-                    <th>Risk %</th>
-                    <th>Timestamp</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for record in records %}
-                <tr>
-                    <td>{{ record[0] }}</td>
-                    <td>{{ record[1] }}</td>
-
-                    <td class="{{ 'abnormal' if 'Abnormal' in record[2] else 'normal' }}">
-                        {{ record[2] }}
-                    </td>
-
-                    <td class="{{ 'risk-high' if record[3] > 50 else 'risk-low' }}">
-                        {{ record[3] }} %
-                    </td>
-
-                    <td>{{ record[4] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-    {% else %}
-        <div class="empty-message">
-            No EEG records found.<br>
-            Visit the main dashboard to generate data.
-        </div>
-    {% endif %}
-
+<div class="top-bar">
+    <a href="/">Main Dashboard</a>
+    <a href="/logout">Logout</a>
 </div>
+
+{% if records %}
+<table>
+    <tr>
+        <th>ID</th>
+        <th>EEG</th>
+        <th>Status</th>
+        <th>Risk</th>
+        <th>Time</th>
+    </tr>
+
+    {% for r in records %}
+    <tr>
+        <td>{{ r[0] }}</td>
+        <td>{{ r[1] }}</td>
+        <td class="{{ 'abnormal' if 'Abnormal' in r[2] else 'normal' }}">
+            {{ r[2] }}
+        </td>
+        <td>{{ r[3] }}%</td>
+        <td>{{ r[4] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="text-align:center;">No Data Yet</p>
+{% endif %}
 
 </body>
 </html>

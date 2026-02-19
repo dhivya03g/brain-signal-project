@@ -1,144 +1,69 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin - Brain Signal AI</title>
-
+    <title>Brain Signal AI - Login</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Segoe UI", sans-serif;
-        }
-
         body {
-            min-height: 100vh;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            padding: 40px;
+            font-family: 'Segoe UI', sans-serif;
             color: white;
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
-
-        .logout {
-            position: absolute;
-            right: 40px;
-            top: 30px;
-            color: cyan;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .logout:hover {
-            text-decoration: underline;
-        }
-
-        .table-container {
+        .login-card {
             background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 0 25px rgba(0,255,255,0.3);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 40px rgba(0,255,255,0.3);
+            text-align: center;
+            width: 320px;
         }
 
-        table {
+        h2 {
+            margin-bottom: 25px;
+        }
+
+        input {
             width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-        }
-
-        th {
-            padding: 15px;
-            background: rgba(0,255,255,0.2);
-            font-weight: bold;
-        }
-
-        td {
             padding: 12px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            margin: 10px 0;
+            border-radius: 10px;
+            border: none;
+            outline: none;
         }
 
-        tr:hover {
-            background: rgba(0,255,255,0.1);
-        }
-
-        .normal {
-            color: #00ff99;
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 10px;
+            border: none;
+            background: cyan;
             font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
         }
 
-        .abnormal {
-            color: #ff4d4d;
-            font-weight: bold;
+        button:hover {
+            background: #00ffff;
+            box-shadow: 0 0 15px cyan;
         }
-
-        .risk-high {
-            color: #ff4d4d;
-            font-weight: bold;
-        }
-
-        .risk-low {
-            color: #00ff99;
-            font-weight: bold;
-        }
-
-        .empty-message {
-            text-align: center;
-            padding: 20px;
-            font-size: 16px;
-            opacity: 0.7;
-        }
-
     </style>
 </head>
-
 <body>
 
-<a href="{{ url_for('logout') }}" class="logout">Logout</a>
-
-<h1>🧠 Admin Monitoring Dashboard</h1>
-
-<div class="table-container">
-
-    {% if records and records|length > 0 %}
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>EEG Value</th>
-                <th>Status</th>
-                <th>Risk %</th>
-                <th>Timestamp</th>
-            </tr>
-
-            {% for record in records %}
-            <tr>
-                <td>{{ record[0] }}</td>
-                <td>{{ record[1] }}</td>
-
-                <td class="{{ 'abnormal' if 'Abnormal' in record[2] else 'normal' }}">
-                    {{ record[2] }}
-                </td>
-
-                <td class="{{ 'risk-high' if record[3] > 50 else 'risk-low' }}">
-                    {{ record[3] }} %
-                </td>
-
-                <td>{{ record[4] }}</td>
-            </tr>
-            {% endfor %}
-
-        </table>
-    {% else %}
-        <div class="empty-message">
-            No EEG records found. <br>
-            Visit the main dashboard to generate data.
-        </div>
-    {% endif %}
-
+<div class="login-card">
+    <h2>🧠 Brain Signal Admin</h2>
+    <form method="POST">
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
 </div>
 
 </body>
