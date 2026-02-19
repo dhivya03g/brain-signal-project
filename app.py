@@ -1,4 +1,3 @@
-import os
 import json
 import random
 import sqlite3
@@ -9,7 +8,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 # -------------------------------
 # App Setup
 # -------------------------------
-
 app = Flask(__name__)
 app.secret_key = "super_secret_key_123"
 
@@ -17,21 +15,16 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-eeg_history = []
-abnormal_count = 0
-
 # -------------------------------
 # Disable Cache (IMPORTANT)
 # -------------------------------
 @app.after_request
 def add_no_cache_headers(response):
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    response.headers["Cache-Control"] = "no-store"
     return response
 
 # -------------------------------
-# Load ML Model
+# Load Model
 # -------------------------------
 with open("brain_model.json", "r") as f:
     model = json.load(f)
@@ -40,7 +33,7 @@ threshold = model["threshold"]
 model_accuracy = model["accuracy"]
 
 # -------------------------------
-# Initialize Database
+# Database Init
 # -------------------------------
 def init_database():
     conn = sqlite3.connect("eeg_database.db")
@@ -63,6 +56,11 @@ def init_database():
             password TEXT
         )
     """)
+
+    # create default user if not exists
+    cursor.execute("SELECT * FROM users WHERE username='admin'")
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", ("admin", "admin"))
 
     conn.commit()
     conn.close()
@@ -97,16 +95,12 @@ def predict_brain_state(eeg_value):
 
 def calculate_risk(eeg_value):
     if eeg_value > threshold:
-        risk = (eeg_value - threshold) * 3
-        return min(100, round(risk, 2))
+        return min(100, round((eeg_value - threshold) * 3, 2))
     return 0
 
-def get_eeg_from_hardware():
+def get_eeg():
     return random.randint(60, 120)
 
-# -------------------------------
-# Logging
-# -------------------------------
 def log_data(eeg_value, status, risk):
     conn = sqlite3.connect("eeg_database.db")
     cursor = conn.cursor()
@@ -132,18 +126,19 @@ def login():
 
         conn = sqlite3.connect("eeg_database.db")
         cursor = conn.cursor()
-        cursor.execute("SELECT id, username, password FROM users WHERE username = ?", (username,))
+        cursor.execute("SELECT id, username, password FROM users WHERE username=?", (username,))
         user = cursor.fetchone()
         conn.close()
 
         if user and user[2] == password:
             login_user(User(user[0], user[1]))
-            return redirect(url_for("admin"))
+            return redirect(url_for("admin"))   # 🔥 IMPORTANT CHANGE
 
     return render_template("login.html")
 
+
 # -------------------------------
-# Logout (FIXED)
+# Logout
 # -------------------------------
 @app.route("/logout")
 def logout():
@@ -152,23 +147,14 @@ def logout():
     return redirect(url_for("login"))
 
 # -------------------------------
-# Public Dashboard (NO login required)
+# Main Dashboard (Protected)
 # -------------------------------
 @app.route("/")
+@login_required
 def home():
-    global eeg_history
-    global abnormal_count
-
-    eeg_value = get_eeg_from_hardware()
+    eeg_value = get_eeg()
     status = predict_brain_state(eeg_value)
     risk = calculate_risk(eeg_value)
-
-    if "Abnormal" in status:
-        abnormal_count += 1
-
-    eeg_history.append(eeg_value)
-    if len(eeg_history) > 20:
-        eeg_history.pop(0)
 
     log_data(eeg_value, status, risk)
 
@@ -176,28 +162,20 @@ def home():
         "index.html",
         eeg=eeg_value,
         status=status,
-        history=eeg_history,
-        accuracy=model_accuracy,
-        threshold=threshold,
         risk=risk,
-        abnormal_count=abnormal_count
+        accuracy=model_accuracy,
+        history=[eeg_value]
     )
 
 # -------------------------------
-# Protected Admin
+# Admin
 # -------------------------------
 @app.route("/admin")
 @login_required
 def admin():
     conn = sqlite3.connect("eeg_database.db")
     cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT * FROM eeg_records
-        ORDER BY id DESC
-        LIMIT 20
-    """)
-
+    cursor.execute("SELECT * FROM eeg_records ORDER BY id DESC LIMIT 20")
     records = cursor.fetchall()
     conn.close()
 
@@ -207,17 +185,17 @@ def admin():
 # API
 # -------------------------------
 @app.route("/api/eeg")
-@login_required
 def api_eeg():
-    eeg_value = get_eeg_from_hardware()
+    eeg_value = get_eeg()
     status = predict_brain_state(eeg_value)
     risk = calculate_risk(eeg_value)
+
+    log_data(eeg_value, status, risk)
 
     return jsonify({
         "eeg_value": eeg_value,
         "status": status,
-        "risk": risk,
-        "threshold": threshold
+        "risk": risk
     })
 
 # -------------------------------
