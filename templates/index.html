@@ -24,6 +24,12 @@
         </p>
     </div>
 
+    <!-- Risk -->
+    <div class="card">
+        <h2>Risk Percentage</h2>
+        <p class="risk">{{ risk }} %</p>
+    </div>
+
     <!-- Model Accuracy -->
     <div class="card">
         <h2>Model Accuracy</h2>
@@ -48,7 +54,7 @@
     const eegData = {{ history | tojson }};
     const ctx = document.getElementById('eegChart').getContext('2d');
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: eegData.map((_, i) => i + 1),
@@ -71,30 +77,22 @@
         }
     });
 
-    const statusText = "{{ status }}";
-    if (statusText.includes("Abnormal")) {
-        alert("🚨 Emergency Alert! Abnormal Brain Activity Detected!");
-    }
+    // 🔥 Real-time API update
+    setInterval(async function() {
+        const response = await fetch('/api/eeg');
+        const data = await response.json();
 
-    // Auto refresh every 2 seconds
-    
+        document.querySelector('.eeg').innerText = data.eeg_value;
+        document.querySelector('.status').innerText = data.status;
+
+        eegData.push(data.eeg_value);
+        if (eegData.length > 20) eegData.shift();
+
+        chart.data.labels = eegData.map((_, i) => i + 1);
+        chart.data.datasets[0].data = eegData;
+        chart.update();
+    }, 2000);
 </script>
-setInterval(async function() {
-    const response = await fetch('/api/eeg');
-    const data = await response.json();
-
-    // Update EEG value
-    document.querySelector('.eeg').innerText = data.eeg_value;
-
-    // Update Status
-    document.querySelector('.status').innerText = data.status;
-
-    // Update Graph
-    eegData.push(data.eeg_value);
-    if (eegData.length > 20) eegData.shift();
-    chart.update();
-
-}, 2000);
 
 </body>
 </html>

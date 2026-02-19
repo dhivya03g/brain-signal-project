@@ -31,7 +31,6 @@
             color: cyan;
             text-decoration: none;
             font-weight: bold;
-            cursor: pointer;
         }
 
         .logout:hover {
@@ -93,6 +92,7 @@
             font-size: 16px;
             opacity: 0.7;
         }
+
     </style>
 </head>
 
@@ -106,39 +106,35 @@
 
     {% if records and records|length > 0 %}
         <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>EEG Value</th>
-                    <th>Status</th>
-                    <th>Risk %</th>
-                    <th>Timestamp</th>
-                </tr>
-            </thead>
+            <tr>
+                <th>ID</th>
+                <th>EEG Value</th>
+                <th>Status</th>
+                <th>Risk %</th>
+                <th>Timestamp</th>
+            </tr>
 
-            <tbody>
-                {% for record in records %}
-                <tr>
-                    <td>{{ record[0] }}</td>
-                    <td>{{ record[1] }}</td>
+            {% for record in records %}
+            <tr>
+                <td>{{ record[0] }}</td>
+                <td>{{ record[1] }}</td>
 
-                    <td class="{{ 'abnormal' if 'Abnormal' in record[2] else 'normal' }}">
-                        {{ record[2] }}
-                    </td>
+                <td class="{{ 'abnormal' if 'Abnormal' in record[2] else 'normal' }}">
+                    {{ record[2] }}
+                </td>
 
-                    <td class="{{ 'risk-high' if record[3] > 50 else 'risk-low' }}">
-                        {{ record[3] }} %
-                    </td>
+                <td class="{{ 'risk-high' if record[3] > 50 else 'risk-low' }}">
+                    {{ record[3] }} %
+                </td>
 
-                    <td>{{ record[4] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
+                <td>{{ record[4] }}</td>
+            </tr>
+            {% endfor %}
+
         </table>
-
     {% else %}
         <div class="empty-message">
-            No EEG records found.<br>
+            No EEG records found. <br>
             Visit the main dashboard to generate data.
         </div>
     {% endif %}
