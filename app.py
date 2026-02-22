@@ -1,205 +1,107 @@
-import json
-import random
-import sqlite3
-from datetime import datetime
-from flask import Flask, render_template, jsonify, redirect, url_for, request, session
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
+from flask import Flask, render_template, request, redirect, session, jsonify, flash
+import sqlite3, random
 
-# -------------------------------
-# App Setup
-# -------------------------------
 app = Flask(__name__)
-app.secret_key = "super_secret_key_123"
+app.secret_key = "brain_secret"
 
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = "login"
-
-# -------------------------------
-# Disable Cache (IMPORTANT)
-# -------------------------------
-@app.after_request
-def add_no_cache_headers(response):
-    response.headers["Cache-Control"] = "no-store"
-    return response
-
-# -------------------------------
-# Load Model
-# -------------------------------
-with open("brain_model.json", "r") as f:
-    model = json.load(f)
-
-threshold = model["threshold"]
-model_accuracy = model["accuracy"]
-
-# -------------------------------
-# Database Init
-# -------------------------------
-def init_database():
-    conn = sqlite3.connect("eeg_database.db")
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS eeg_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            eeg_value INTEGER,
-            status TEXT,
-            risk REAL,
-            timestamp TEXT
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT
-        )
-    """)
-
-    # create default user if not exists
-    cursor.execute("SELECT * FROM users WHERE username='admin'")
-    if not cursor.fetchone():
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", ("admin", "admin"))
-
+# ---------------- DATABASE ----------------
+def init_db():
+    conn = sqlite3.connect("users.db")
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS users(username TEXT, password TEXT)")
+    cur.execute("INSERT OR IGNORE INTO users VALUES('admin','admin')")
     conn.commit()
     conn.close()
 
-init_database()
-
-# -------------------------------
-# User Class
-# -------------------------------
-class User(UserMixin):
-    def __init__(self, id, username):
-        self.id = str(id)
-        self.username = username
-
-@login_manager.user_loader
-def load_user(user_id):
     conn = sqlite3.connect("eeg_database.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, username FROM users WHERE id = ?", (user_id,))
-    user = cursor.fetchone()
-    conn.close()
-
-    if user:
-        return User(user[0], user[1])
-    return None
-
-# -------------------------------
-# ML Logic
-# -------------------------------
-def predict_brain_state(eeg_value):
-    return "Abnormal Activity Detected" if eeg_value > threshold else "Normal Brain Activity"
-
-def calculate_risk(eeg_value):
-    if eeg_value > threshold:
-        return min(100, round((eeg_value - threshold) * 3, 2))
-    return 0
-
-def get_eeg():
-    return random.randint(60, 120)
-
-def log_data(eeg_value, status, risk):
-    conn = sqlite3.connect("eeg_database.db")
-    cursor = conn.cursor()
-
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    cursor.execute("""
-        INSERT INTO eeg_records (eeg_value, status, risk, timestamp)
-        VALUES (?, ?, ?, ?)
-    """, (eeg_value, status, risk, timestamp))
-
+    cur = conn.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS eeg_data(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        value INTEGER,
+        status TEXT,
+        risk INTEGER,
+        time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
     conn.commit()
     conn.close()
 
-# -------------------------------
-# Login
-# -------------------------------
-@app.route("/login", methods=["GET", "POST"])
+init_db()
+
+# ---------------- LOGIN ----------------
+@app.route('/login', methods=['GET','POST'])
 def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+    if request.method == 'POST':
+        u = request.form['username']
+        p = request.form['password']
 
-        conn = sqlite3.connect("eeg_database.db")
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, username, password FROM users WHERE username=?", (username,))
-        user = cursor.fetchone()
+        conn = sqlite3.connect("users.db")
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE username=? AND password=?", (u,p))
+        user = cur.fetchone()
         conn.close()
 
-        if user and user[2] == password:
-            login_user(User(user[0], user[1]))
-            return redirect(url_for("admin"))   # 🔥 IMPORTANT CHANGE
+        if user:
+            session['user'] = u
+            return redirect('/')
+        else:
+            flash("Invalid username or password")
+            return redirect('/login')
 
     return render_template("login.html")
 
+# ---------------- DASHBOARD ----------------
+@app.route('/')
+def dashboard():
+    if 'user' not in session:
+        return redirect('/login')
+    return render_template("dashboard.html")
 
-# -------------------------------
-# Logout
-# -------------------------------
-@app.route("/logout")
-def logout():
-    logout_user()
-    session.clear()
-    return redirect(url_for("login"))
-
-# -------------------------------
-# Main Dashboard (Protected)
-# -------------------------------
-@app.route("/")
-@login_required
-def home():
-    eeg_value = get_eeg()
-    status = predict_brain_state(eeg_value)
-    risk = calculate_risk(eeg_value)
-
-    log_data(eeg_value, status, risk)
-
-    return render_template(
-        "index.html",
-        eeg=eeg_value,
-        status=status,
-        risk=risk,
-        accuracy=model_accuracy,
-        history=[eeg_value]
-    )
-
-# -------------------------------
-# Admin
-# -------------------------------
-@app.route("/admin")
-@login_required
+# ---------------- ADMIN ----------------
+@app.route('/admin')
 def admin():
+    if 'user' not in session:
+        return redirect('/login')
+
     conn = sqlite3.connect("eeg_database.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM eeg_records ORDER BY id DESC LIMIT 20")
-    records = cursor.fetchall()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM eeg_data ORDER BY id DESC LIMIT 20")
+    data = cur.fetchall()
     conn.close()
 
-    return render_template("admin.html", records=records)
+    return render_template("admin.html", data=data)
 
-# -------------------------------
-# API
-# -------------------------------
-@app.route("/api/eeg")
-def api_eeg():
-    eeg_value = get_eeg()
-    status = predict_brain_state(eeg_value)
-    risk = calculate_risk(eeg_value)
+# ---------------- LOGOUT ----------------
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
 
-    log_data(eeg_value, status, risk)
+# ---------------- SENSOR VALUE ----------------
+def get_value():
+    return random.randint(60,150)
+
+# ---------------- API FOR DASHBOARD ----------------
+@app.route('/api/health')
+def api_health():
+    val = get_value()
+    status = "Normal" if val < 120 else "Abnormal"
+    risk = 0 if status=="Normal" else 85
+
+    # save history
+    conn = sqlite3.connect("eeg_database.db")
+    cur = conn.cursor()
+    cur.execute("INSERT INTO eeg_data(value,status,risk) VALUES(?,?,?)",(val,status,risk))
+    conn.commit()
+    conn.close()
 
     return jsonify({
-        "eeg_value": eeg_value,
+        "value": val,
         "status": status,
         "risk": risk
     })
 
-# -------------------------------
-# Run
-# -------------------------------
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)
