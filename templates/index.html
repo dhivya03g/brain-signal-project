@@ -1,266 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-<<<<<<< HEAD
-<title>Brain Signal Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-body{margin:0;font-family:"Segoe UI";background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:white}
-.top-bar{display:flex;justify-content:space-between;padding:20px 40px}
-.dashboard{display:flex;flex-wrap:wrap;justify-content:center;gap:25px;padding:30px}
-.card{background:rgba(255,255,255,0.08);border-radius:18px;padding:25px;width:260px;text-align:center}
-.value{font-size:32px;font-weight:bold}
-.normal{color:#00ff99}
-.abnormal{color:#ff4d4d}
-</style>
-</head>
-<body>
-
-<div class="top-bar">
-<h1>🧠 Brain Signal Monitoring</h1>
-<div>
-<a href="/admin">Admin</a>
-<a href="/logout">Logout</a>
-</div>
-=======
     <title>Brain Signal Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body {
             margin: 0;
-            font-family: "Segoe UI", sans-serif;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            font-family: Arial;
+            background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
             color: white;
         }
 
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px 40px;
-            align-items: center;
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            padding:20px;
         }
 
-        .top-bar h1 {
-            margin: 0;
+        .dashboard{
+            display:flex;
+            flex-wrap:wrap;
+            justify-content:center;
+            gap:25px;
+            padding:20px;
         }
 
-        .top-bar a {
-            color: cyan;
-            text-decoration: none;
-            margin-left: 20px;
-            font-weight: bold;
+        .card{
+            width:250px;
+            background:rgba(255,255,255,0.08);
+            padding:25px;
+            border-radius:15px;
+            text-align:center;
         }
 
-        .top-bar a:hover {
-            text-decoration: underline;
+        .value{
+            font-size:30px;
+            font-weight:bold;
         }
 
-        .dashboard {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 25px;
-            padding: 30px;
-        }
+        .normal{ color:#00ff99; }
+        .abnormal{ color:#ff4d4d; }
 
-        .card {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(15px);
-            border-radius: 18px;
-            padding: 25px;
-            width: 260px;
-            text-align: center;
-            box-shadow: 0 0 25px rgba(0,255,255,0.2);
-        }
-
-        .card h2 {
-            margin-bottom: 15px;
-        }
-
-        .value {
-            font-size: 32px;
-            font-weight: bold;
-        }
-
-        .normal {
-            color: #00ff99;
-        }
-
-        .abnormal {
-            color: #ff4d4d;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            50% { opacity: 0.4; }
-        }
-
-        .brain {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            margin: 20px auto;
-            animation: pulse 1.5s infinite;
-        }
-
-        .brain-normal {
-            background-color: #00ff88;
-            box-shadow: 0 0 25px #00ff88;
-        }
-
-        .brain-alert {
-            background-color: #ff3333;
-            box-shadow: 0 0 30px #ff0000;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .graph-card {
-            width: 600px;
+        canvas{
+            background:#fff;
+            border-radius:10px;
         }
     </style>
 </head>
 
 <body>
 
-<div class="top-bar">
-    <h1>🧠 Brain Signal Monitoring</h1>
+<div class="topbar">
+    <h2>🧠 Brain Signal Monitoring</h2>
     <div>
-        <a href="/admin">Admin</a>
-        <a href="/logout">Logout</a>
+        <a href="/admin" style="color:cyan">Admin</a>
+        <a href="/logout" style="color:cyan;margin-left:15px">Logout</a>
     </div>
->>>>>>> 99c53c573f8131cebfe1f7b9575dc92953571e3f
 </div>
 
 <div class="dashboard">
 
-<<<<<<< HEAD
-<div class="card">
-<h2>ECG</h2>
-<div class="value ecg">{{ ecg }}</div>
-</div>
-
-<div class="card">
-<h2>Heart Rate</h2>
-<div class="value hr">{{ hr }}</div>
-</div>
-
-<div class="card">
-<h2>SpO2</h2>
-<div class="value spo2">{{ spo2 }}</div>
-</div>
-
-<div class="card">
-<h2>Status</h2>
-<div class="value status {% if 'Abnormal' in status %}abnormal{% else %}normal{% endif %}">
-{{ status }}
-</div>
-</div>
-=======
-    <!-- EEG -->
     <div class="card">
-        <h2>EEG Value</h2>
+        <h3>EEG Value</h3>
         <div class="value eeg">{{ eeg }}</div>
     </div>
 
-    <!-- Status -->
     <div class="card">
-        <h2>Status</h2>
+        <h3>Status</h3>
         <div class="value status {% if 'Abnormal' in status %}abnormal{% else %}normal{% endif %}">
             {{ status }}
         </div>
     </div>
 
-    <!-- Risk -->
     <div class="card">
-        <h2>Risk %</h2>
-        <div class="value">{{ risk }}%</div>
+        <h3>Risk %</h3>
+        <div class="value risk">{{ risk }}%</div>
     </div>
 
-    <!-- Accuracy -->
     <div class="card">
-        <h2>Model Accuracy</h2>
-        <div class="value">{{ (accuracy * 100) | round(2) }}%</div>
+        <h3>Model Accuracy</h3>
+        <div class="value">{{ (accuracy*100)|round(1) }}%</div>
     </div>
 
-    <!-- Digital Twin -->
-    <div class="card">
-        <h2>Digital Twin</h2>
-        <div class="brain {% if 'Abnormal' in status %}brain-alert{% else %}brain-normal{% endif %}"></div>
+    <div class="card" style="width:600px">
+        <h3>Live EEG Graph</h3>
+        <canvas id="chart"></canvas>
     </div>
-
-    <!-- Graph -->
-    <div class="card graph-card">
-        <h2>Live EEG Graph</h2>
-        <canvas id="eegChart"></canvas>
-    </div>
->>>>>>> 99c53c573f8131cebfe1f7b9575dc92953571e3f
 
 </div>
 
 <script>
-<<<<<<< HEAD
-setInterval(async ()=>{
-const res=await fetch('/api/health');
-const data=await res.json();
-document.querySelector('.ecg').innerText=data.ecg;
-document.querySelector('.hr').innerText=data.hr;
-document.querySelector('.spo2').innerText=data.spo2;
-document.querySelector('.status').innerText=data.status;
+const ctx = document.getElementById('chart').getContext('2d');
+let dataArr = [{{ eeg }}];
+
+const chart = new Chart(ctx,{
+    type:'line',
+    data:{
+        labels:dataArr.map((_,i)=>i),
+        datasets:[{
+            label:'EEG',
+            data:dataArr,
+            borderColor:'cyan'
+        }]
+    }
+});
+
+setInterval(async()=>{
+    const res = await fetch('/api/health');
+    const d = await res.json();
+
+    document.querySelector('.eeg').innerText = d.eeg;
+    document.querySelector('.status').innerText = d.status;
+    document.querySelector('.risk').innerText = d.risk + "%";
+
+    dataArr.push(d.eeg);
+    if(dataArr.length>20) dataArr.shift();
+
+    chart.data.labels = dataArr.map((_,i)=>i);
+    chart.data.datasets[0].data = dataArr;
+    chart.update();
+
 },2000);
 </script>
 
 </body>
 </html>
-=======
-    const eegData = {{ history | tojson }};
-    const ctx = document.getElementById('eegChart').getContext('2d');
-
-    const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: eegData.map((_, i) => i + 1),
-            datasets: [{
-                label: 'EEG Signal',
-                data: eegData,
-                borderColor: 'cyan',
-                borderWidth: 2,
-                fill: false,
-                tension: 0.3
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    min: 50,
-                    max: 130
-                }
-            }
-        }
-    });
-
-    // Real-time update
-    setInterval(async function() {
-        const response = await fetch('/api/eeg');
-        const data = await response.json();
-
-        document.querySelector('.eeg').innerText = data.eeg_value;
-        document.querySelector('.status').innerText = data.status;
-
-        eegData.push(data.eeg_value);
-        if (eegData.length > 20) eegData.shift();
-
-        chart.data.labels = eegData.map((_, i) => i + 1);
-        chart.data.datasets[0].data = eegData;
-        chart.update();
-    }, 2000);
-</script>
-
-</body>
-</html>
->>>>>>> 99c53c573f8131cebfe1f7b9575dc92953571e3f
