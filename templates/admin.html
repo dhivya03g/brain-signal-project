@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<<<<<<< HEAD
 <title>Admin Dashboard</title>
 <style>
 body{
@@ -73,3 +74,101 @@ a{
 
 </body>
 </html>
+=======
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            font-family: 'Segoe UI', sans-serif;
+            color: white;
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .top-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        a {
+            color: cyan;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.08);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+        }
+
+        th {
+            background: rgba(0,255,255,0.2);
+        }
+
+        tr:nth-child(even) {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .normal {
+            color: #00ff99;
+        }
+
+        .abnormal {
+            color: #ff4d4d;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🧠 Admin Monitoring Dashboard</h1>
+
+<div class="top-bar">
+    <a href="/">Main Dashboard</a>
+    <a href="/logout">Logout</a>
+</div>
+
+{% if records %}
+<table>
+    <tr>
+        <th>ID</th>
+        <th>EEG</th>
+        <th>Status</th>
+        <th>Risk</th>
+        <th>Time</th>
+    </tr>
+
+    {% for r in records %}
+    <tr>
+        <td>{{ r[0] }}</td>
+        <td>{{ r[1] }}</td>
+        <td class="{{ 'abnormal' if 'Abnormal' in r[2] else 'normal' }}">
+            {{ r[2] }}
+        </td>
+        <td>{{ r[3] }}%</td>
+        <td>{{ r[4] }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="text-align:center;">No Data Yet</p>
+{% endif %}
+
+</body>
+</html>
+>>>>>>> 99c53c573f8131cebfe1f7b9575dc92953571e3f
