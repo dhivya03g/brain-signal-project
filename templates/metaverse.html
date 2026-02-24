@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Metaverse Digital Twin</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #e6f7ff, #cceeff);
+            font-family: 'Segoe UI', sans-serif;
+            color: #003344;
+        }
+
+        #panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(0, 120, 150, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(0,150,200,0.3);
+        }
+
+        #bpm {
+            font-size: 32px;
+            font-weight: bold;
+            color: #0077aa;
+        }
+    </style>
+</head>
+<body>
+
+<div id="panel">
+    <h2>🫀 Digital Twin</h2>
+
+    Gender:
+    <select id="gender">
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+    </select>
+
+    <div>BPM: <span id="bpm">--</span></div>
+    <div id="status">Loading...</div>
+</div>
+
+<script>
+
+// ================= SCENE =================
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xe6f7ff);
+
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+camera.position.set(0, 1.2, 7);
+camera.lookAt(0, 1, 0);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(5, 10, 5);
+scene.add(dirLight);
+
+// Soft floor glow
+const floorGeometry = new THREE.CircleGeometry(10, 32);
+const floorMaterial = new THREE.MeshBasicMaterial({
+    color: 0xb3ecff,
+    transparent: true,
+    opacity: 0.3
+});
+const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = -2.5;
+scene.add(floor);
+
+const loader = new THREE.GLTFLoader();
+
+let humanModel;
+let heartModel;
+let pulseSpeed = 0.008;
+let pulseStrength = 0.07;
+let isAbnormal = false;
+
+// ================= LOAD HEART FIRST =================
+
+loader.load("/static/heart.glb", function(gltf) {
+    heartModel = gltf.scene;
+    heartModel.scale.set(0.06, 0.06, 0.06);
+
+    loadHuman("male");
+});
+
+// ================= LOAD HUMAN =================
+
+function loadHuman(type) {
+
+    if (humanModel) scene.remove(humanModel);
+
+    loader.load(`/static/${type}.glb`, function(gltf) {
+
+        humanModel = gltf.scene;
+
+        humanModel.scale.set(2, 2, 2);
+        humanModel.position.set(0, -2, 0);
+
+        scene.add(humanModel);
+
+        attachHeart();
+    });
+}
+
+document.getElementById("gender").addEventListener("change", function() {
+    loadHuman(this.value);
+});
+
+// ================= ATTACH HEART =================
+
+function attachHeart() {
+
+    if (!humanModel || !heartModel) return;
+
+    if (heartModel.parent) {
+        heartModel.parent.remove(heartModel);
+    }
+
+    humanModel.add(heartModel);
+
+    // RIGHT + Slightly Lower
+    heartModel.position.set(0.45, 0.85, 0.15);
+    heartModel.rotation.set(0.25, -0.25, -0.15);
+}
+
+// ================= HEARTBEAT =================
+
+function animate() {
+
+    requestAnimationFrame(animate);
+
+    if (heartModel) {
+
+        const pulse = 1 + Math.sin(Date.now() * pulseSpeed) * pulseStrength;
+
+        heartModel.scale.set(
+            0.06 * pulse,
+            0.06 * pulse,
+            0.06 * pulse
+        );
+    }
+
+    renderer.render(scene, camera);
+}
+
+animate();
+
+// ================= API =================
+
+async function fetchData() {
+
+    const res = await fetch("/api/health");
+    const data = await res.json();
+
+    document.getElementById("bpm").innerText = Math.round(data.eeg);
+
+    if(data.status.includes("Abnormal")) {
+
+        document.getElementById("status").innerText = "⚠ Abnormal";
+        document.getElementById("status").style.color = "red";
+
+        pulseSpeed = 0.02;      // Faster beat
+        pulseStrength = 0.15;   // Stronger beat
+        isAbnormal = true;
+
+    } else {
+
+        document.getElementById("status").innerText = "✔ Normal";
+        document.getElementById("status").style.color = "#008800";
+
+        pulseSpeed = 0.008;     // Normal speed
+        pulseStrength = 0.07;   // Normal strength
+        isAbnormal = false;
+    }
+}
+
+setInterval(fetchData, 2000);
+
+// Resize
+window.addEventListener("resize", function() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+</script>
+
+</body>
+</html>
