@@ -1,5 +1,7 @@
 *.db
 __pycache__/
 venv/
-.env
 .venv/
+.env
+mit-bih-arrhythmia-database-1.0.0/
+ecg_100.csv
