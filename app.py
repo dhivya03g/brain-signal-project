@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 
+# ---------------- APP INIT ----------------
 app = Flask(__name__)
 app.secret_key = "super_secret_key"
 
@@ -128,6 +129,12 @@ def admin():
     conn.close()
 
     return render_template("admin.html", records=records)
+
+# 🔥 ADD THIS (METAVERSE ROUTE)
+@app.route("/metaverse")
+@login_required
+def metaverse():
+    return render_template("metaverse.html")
 
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
