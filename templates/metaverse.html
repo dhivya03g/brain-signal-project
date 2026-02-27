@@ -1,51 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Metaverse Digital Twin</title>
+<title>Advanced Cardiac Digital Twin</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: linear-gradient(to bottom, #e6f7ff, #cceeff);
-            font-family: 'Segoe UI', sans-serif;
-            color: #003344;
-        }
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+    background: radial-gradient(circle at center, #0e2a3a, #08151f);
+    font-family:Segoe UI;
+    color:white;
+}
 
-        #panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 20px;
-            border-radius: 15px;
-            background: rgba(0, 120, 150, 0.1);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 20px rgba(0,150,200,0.3);
-        }
+#ui{
+    position:absolute;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+}
 
-        #bpm {
-            font-size: 32px;
-            font-weight: bold;
-            color: #0077aa;
-        }
-    </style>
+.panel{
+    position:absolute;
+    background:rgba(255,255,255,0.06);
+    backdrop-filter:blur(12px);
+    border-radius:15px;
+    padding:15px 20px;
+    pointer-events:auto;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.panel:hover{
+    background:rgba(0,255,255,0.15);
+}
+
+#topPanel{
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+}
+
+#malePanel{ left:30px; top:150px; }
+#femalePanel{ left:30px; bottom:150px; }
+#childPanel{ right:30px; top:220px; }
+
+button{
+    margin:5px;
+    padding:5px 10px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.bpm{
+    font-size:22px;
+    color:#00f2ff;
+}
+.status{ font-size:14px; }
+</style>
 </head>
+
 <body>
 
-<div id="panel">
+<div id="ui">
+
+<div id="topPanel" class="panel">
     <h2>🫀 Digital Twin</h2>
+    <div id="mainBPM" class="bpm">-- BPM</div>
+    <div id="mainStatus" class="status">Loading...</div>
 
-    Gender:
-    <select id="gender">
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-    </select>
+    <br>
+    <button onclick="setView('front')">Front</button>
+    <button onclick="setView('top')">Top</button>
+    <button onclick="setView('side')">Side</button>
+    <button onclick="setView('bottom')">Bottom</button>
+</div>
 
-    <div>BPM: <span id="bpm">--</span></div>
-    <div id="status">Loading...</div>
+<div id="malePanel" class="panel">Adult Male</div>
+<div id="femalePanel" class="panel">Adult Female</div>
+<div id="childPanel" class="panel">Child</div>
+
 </div>
 
 <script>
@@ -53,156 +92,159 @@
 // ================= SCENE =================
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xe6f7ff);
 
 const camera = new THREE.PerspectiveCamera(
     60,
-    window.innerWidth / window.innerHeight,
+    window.innerWidth/window.innerHeight,
     0.1,
     1000
 );
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
+camera.position.set(0, 0.8, 5);
+camera.lookAt(0, 0.8, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.localClippingEnabled = true;
 document.body.appendChild(renderer.domElement);
 
-camera.position.set(0, 1.2, 7);
-camera.lookAt(0, 1, 0);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-// Lighting
-scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+scene.add(new THREE.AmbientLight(0xffffff,0.8));
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-dirLight.position.set(5, 10, 5);
-scene.add(dirLight);
-
-// Soft floor glow
-const floorGeometry = new THREE.CircleGeometry(10, 32);
-const floorMaterial = new THREE.MeshBasicMaterial({
-    color: 0xb3ecff,
-    transparent: true,
-    opacity: 0.3
-});
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-floor.position.y = -2.5;
-scene.add(floor);
+const light = new THREE.DirectionalLight(0xffffff,1);
+light.position.set(5,5,5);
+scene.add(light);
 
 const loader = new THREE.GLTFLoader();
 
-let humanModel;
 let heartModel;
-let pulseSpeed = 0.008;
-let pulseStrength = 0.07;
-let isAbnormal = false;
+let pulseSpeed = 0.01;
+let baseScale = 0.06;
+let blockageMesh;
+let clipPlane = new THREE.Plane(new THREE.Vector3(-1,0,0), 0);
 
-// ================= LOAD HEART FIRST =================
+// ================= LOAD HEART =================
 
-loader.load("/static/heart.glb", function(gltf) {
+loader.load("/static/heart.glb", function(gltf){
+
     heartModel = gltf.scene;
-    heartModel.scale.set(0.06, 0.06, 0.06);
 
-    loadHuman("male");
+    heartModel.scale.set(baseScale,baseScale,baseScale);
+    heartModel.position.set(0,0.8,0);
+    heartModel.rotation.set(0,0,0);
+
+    scene.add(heartModel);
+
+    createBlockage();
 });
 
-// ================= LOAD HUMAN =================
+// ================= BLOCKAGE RING =================
 
-function loadHuman(type) {
+function createBlockage(){
 
-    if (humanModel) scene.remove(humanModel);
-
-    loader.load(`/static/${type}.glb`, function(gltf) {
-
-        humanModel = gltf.scene;
-
-        humanModel.scale.set(2, 2, 2);
-        humanModel.position.set(0, -2, 0);
-
-        scene.add(humanModel);
-
-        attachHeart();
+    const ringGeo = new THREE.RingGeometry(0.2,0.25,64);
+    const ringMat = new THREE.MeshBasicMaterial({
+        color:0xff0000,
+        side:THREE.DoubleSide,
+        wireframe:true
     });
+
+    blockageMesh = new THREE.Mesh(ringGeo, ringMat);
+    blockageMesh.position.set(0.3,0.9,0.1);
+    blockageMesh.rotation.y = Math.PI/2;
+    blockageMesh.visible = false;
+
+    scene.add(blockageMesh);
 }
 
-document.getElementById("gender").addEventListener("change", function() {
-    loadHuman(this.value);
-});
+// ================= VIEW SWITCH =================
 
-// ================= ATTACH HEART =================
+function setView(view){
 
-function attachHeart() {
+    if(view==="front") camera.position.set(0,0.8,5);
+    if(view==="top") camera.position.set(0,5,0.01);
+    if(view==="side") camera.position.set(5,0.8,0);
+    if(view==="bottom") camera.position.set(0,-5,0.01);
 
-    if (!humanModel || !heartModel) return;
-
-    if (heartModel.parent) {
-        heartModel.parent.remove(heartModel);
-    }
-
-    humanModel.add(heartModel);
-
-    // RIGHT + Slightly Lower
-    heartModel.position.set(0.45, 0.85, 0.15);
-    heartModel.rotation.set(0.25, -0.25, -0.15);
+    camera.lookAt(0,0.8,0);
 }
 
-// ================= HEARTBEAT =================
+// ================= ANIMATION =================
 
-function animate() {
-
+function animate(){
     requestAnimationFrame(animate);
 
-    if (heartModel) {
+    if(heartModel){
 
-        const pulse = 1 + Math.sin(Date.now() * pulseSpeed) * pulseStrength;
+        const pulse = 1 + Math.sin(Date.now()*pulseSpeed)*0.1;
 
         heartModel.scale.set(
-            0.06 * pulse,
-            0.06 * pulse,
-            0.06 * pulse
+            baseScale*pulse,
+            baseScale*pulse,
+            baseScale*pulse
         );
+
+        const distance = camera.position.length();
+
+        heartModel.traverse(child=>{
+            if(child.isMesh){
+                child.material.clippingPlanes = distance < 3 ? [clipPlane] : [];
+            }
+        });
     }
 
-    renderer.render(scene, camera);
+    controls.update();
+    renderer.render(scene,camera);
 }
 
 animate();
 
+// ================= PATIENT SWITCH =================
+
+document.getElementById("malePanel").onclick = ()=>{
+    pulseSpeed = 0.01;
+    baseScale = 0.06;
+};
+
+document.getElementById("femalePanel").onclick = ()=>{
+    pulseSpeed = 0.012;
+    baseScale = 0.055;
+};
+
+document.getElementById("childPanel").onclick = ()=>{
+    pulseSpeed = 0.02;
+    baseScale = 0.045;
+};
+
 // ================= API =================
 
-async function fetchData() {
+async function fetchData(){
 
     const res = await fetch("/api/health");
     const data = await res.json();
 
-    document.getElementById("bpm").innerText = Math.round(data.eeg);
+    document.getElementById("mainBPM").innerText = Math.round(data.eeg)+" BPM";
 
-    if(data.status.includes("Abnormal")) {
-
-        document.getElementById("status").innerText = "⚠ Abnormal";
-        document.getElementById("status").style.color = "red";
-
-        pulseSpeed = 0.02;      // Faster beat
-        pulseStrength = 0.15;   // Stronger beat
-        isAbnormal = true;
-
-    } else {
-
-        document.getElementById("status").innerText = "✔ Normal";
-        document.getElementById("status").style.color = "#008800";
-
-        pulseSpeed = 0.008;     // Normal speed
-        pulseStrength = 0.07;   // Normal strength
-        isAbnormal = false;
+    if(data.status.includes("Abnormal")){
+        document.getElementById("mainStatus").innerText = "⚠ Blockage Detected";
+        document.getElementById("mainStatus").style.color="red";
+        blockageMesh.visible = true;
+        pulseSpeed = 0.02;
+    } else{
+        document.getElementById("mainStatus").innerText = "✔ Normal";
+        document.getElementById("mainStatus").style.color="#00ff88";
+        blockageMesh.visible = false;
     }
 }
 
-setInterval(fetchData, 2000);
+setInterval(fetchData,2000);
 
-// Resize
-window.addEventListener("resize", function() {
-    camera.aspect = window.innerWidth / window.innerHeight;
+window.addEventListener("resize", ()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth,window.innerHeight);
 });
 
 </script>
