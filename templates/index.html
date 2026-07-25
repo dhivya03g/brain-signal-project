@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Brain Signal Dashboard</title>
+    <title>AI-Based Cardiac Digital Twin Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -52,7 +52,7 @@
 <body>
 
 <div class="topbar">
-    <h2>🧠 Brain Signal Monitoring</h2>
+    <h2>🫀 Cardiac Digital Twin Dashboard</h2>
     <div>
         <a href="/admin" style="color:cyan">Admin</a>
         <a href="/logout" style="color:cyan;margin-left:15px">Logout</a>
@@ -62,8 +62,8 @@
 <div class="dashboard">
 
     <div class="card">
-        <h3>EEG Value</h3>
-        <div class="value eeg">{{ eeg }}</div>
+        <h3>Heart Rate</h3>
+        <div class="value bpm">{{ bpm }} BPM</div>
     </div>
 
     <div class="card">
@@ -83,8 +83,24 @@
         <div class="value">{{ (accuracy*100)|round(1) }}%</div>
     </div>
 
+    <div class="card">
+    <h3>3D Cardiac Twin</h3>
+
+    <a href="/metaverse">
+        <button style="
+            padding:12px 25px;
+            background:#00e5ff;
+            border:none;
+            border-radius:10px;
+            cursor:pointer;
+            font-weight:bold;">
+            Open Metaverse
+        </button>
+    </a>
+</div>
+
     <div class="card" style="width:600px">
-        <h3>Live EEG Graph</h3>
+        <h3>Live Heart Rate Graph</h3>
         <canvas id="chart"></canvas>
     </div>
 
@@ -92,37 +108,65 @@
 
 <script>
 const ctx = document.getElementById('chart').getContext('2d');
-let dataArr = [{{ eeg }}];
+
+let dataArr = [{{ bpm }}];
 
 const chart = new Chart(ctx,{
     type:'line',
     data:{
         labels:dataArr.map((_,i)=>i),
         datasets:[{
-            label:'EEG',
+            label:'Heart Rate (BPM)',
             data:dataArr,
-            borderColor:'cyan'
+            borderColor:'cyan',
+            borderWidth:3,
+            fill:false,
+            tension:0.4
         }]
+    },
+    options:{
+        responsive:true,
+        plugins:{
+            legend:{
+                labels:{
+                    color:"white"
+                }
+            }
+        },
+        scales:{
+            x:{
+                ticks:{color:"white"},
+                grid:{color:"rgba(255,255,255,0.1)"}
+            },
+            y:{
+                ticks:{color:"white"},
+                grid:{color:"rgba(255,255,255,0.1)"}
+            }
+        }
     }
 });
 
 setInterval(async()=>{
+
     const res = await fetch('/api/health');
     const d = await res.json();
 
-    document.querySelector('.eeg').innerText = d.eeg;
+    document.querySelector('.bpm').innerText = d.bpm + " BPM";
     document.querySelector('.status').innerText = d.status;
     document.querySelector('.risk').innerText = d.risk + "%";
 
-    dataArr.push(d.eeg);
-    if(dataArr.length>20) dataArr.shift();
+    dataArr.push(d.bpm);
+
+    if(dataArr.length>20)
+        dataArr.shift();
 
     chart.data.labels = dataArr.map((_,i)=>i);
     chart.data.datasets[0].data = dataArr;
+
     chart.update();
 
 },2000);
-</script>
 
+</script>
 </body>
 </html>

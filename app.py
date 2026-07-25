@@ -15,17 +15,19 @@ login_manager.init_app(app)
 login_manager.login_view = "login"
 
 # ---------------- LOAD MODEL ----------------
-with open("brain_model.json", "r") as f:
+with open("cardiac_model.json", "r") as f:
     model = json.load(f)
 
 threshold = model["threshold"]
 accuracy = model["accuracy"]
 
 # ---------------- DATABASE INIT ----------------
+# ---------------- DATABASE INIT ----------------
 def init_db():
-    conn = sqlite3.connect("eeg_database.db")
+    conn = sqlite3.connect("cardiac_database.db")
     cursor = conn.cursor()
 
+    # Users Table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,27 +36,29 @@ def init_db():
         )
     """)
 
+    # Cardiac Records Table
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS eeg_records (
+        CREATE TABLE IF NOT EXISTS cardiac_records (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            eeg_value INTEGER,
+            bpm INTEGER,
             status TEXT,
             risk REAL,
             timestamp TEXT
         )
     """)
 
-    # Default admin
-    cursor.execute("SELECT * FROM users WHERE username='admin'")
-    if not cursor.fetchone():
+    # Default Admin Account
+    cursor.execute("SELECT * FROM users WHERE username = ?", ("admin",))
+    if cursor.fetchone() is None:
         cursor.execute(
-            "INSERT INTO users (username,password) VALUES (?,?)",
+            "INSERT INTO users (username, password) VALUES (?, ?)",
             ("admin", "admin")
         )
 
     conn.commit()
     conn.close()
 
+# Initialize Database
 init_db()
 
 # ---------------- USER CLASS ----------------
@@ -65,7 +69,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    conn = sqlite3.connect("eeg_database.db")
+    conn = sqlite3.connect("cardiac_database.db")
     cursor = conn.cursor()
     cursor.execute("SELECT id, username FROM users WHERE id=?", (user_id,))
     user = cursor.fetchone()
@@ -76,25 +80,27 @@ def load_user(user_id):
     return None
 
 # ---------------- AI LOGIC ----------------
-def predict_brain_state(value):
-    return "Abnormal Activity Detected" if value > threshold else "Normal Brain Activity"
+def predict_heart_state(bpm):
+    if bpm > threshold:
+        return "Abnormal Heart Rate"
+    return "Normal"
 
-def calculate_risk(value):
-    if value > threshold:
-        return min(100, round((value - threshold) * 3, 2))
+def calculate_risk(bpm):
+    if bpm > threshold:
+        return min(100, round((bpm - threshold) * 3, 2))
     return 0
 
-def get_eeg():
-    return random.randint(60, 120)
+def get_bpm():
+    return random.randint(65,100)
 
-def log_data(value, status, risk):
-    conn = sqlite3.connect("eeg_database.db")
+def log_data(bpm, status, risk):
+    conn = sqlite3.connect("cardiac_database.db")
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT INTO eeg_records (eeg_value, status, risk, timestamp)
+        INSERT INTO cardiac_records (bpm, status, risk, timestamp)
         VALUES (?, ?, ?, ?)
-    """, (value, status, risk, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    """, (bpm, status, risk, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     conn.commit()
     conn.close()
@@ -104,27 +110,29 @@ def log_data(value, status, risk):
 @app.route("/")
 @login_required
 def home():
-    value = get_eeg()
-    status = predict_brain_state(value)
-    risk = calculate_risk(value)
 
-    log_data(value, status, risk)
+    bpm = get_bpm()
+
+    status = predict_heart_state(bpm)
+
+    risk = calculate_risk(bpm)
+
+    log_data(bpm, status, risk)
 
     return render_template(
         "index.html",
-        eeg=value,
+        bpm=bpm,
         status=status,
         risk=risk,
-        accuracy=accuracy,
-        history=[value]
+        accuracy=accuracy
     )
 
 @app.route("/admin")
 @login_required
 def admin():
-    conn = sqlite3.connect("eeg_database.db")
+    conn = sqlite3.connect("cardiac_database.db")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM eeg_records ORDER BY id DESC LIMIT 20")
+    cursor.execute("SELECT * FROM cardiac_records ORDER BY id DESC LIMIT 20")
     records = cursor.fetchall()
     conn.close()
 
@@ -143,7 +151,7 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = sqlite3.connect("eeg_database.db")
+        conn = sqlite3.connect("cardiac_database.db")
         cursor = conn.cursor()
         cursor.execute(
             "SELECT id, username, password FROM users WHERE username=?",
@@ -165,7 +173,7 @@ def signup():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = sqlite3.connect("eeg_database.db")
+        conn = sqlite3.connect("cardiac_database.db")
         cursor = conn.cursor()
 
         cursor.execute("SELECT * FROM users WHERE username=?", (username,))
@@ -195,18 +203,24 @@ def logout():
 @app.route("/api/health")
 @login_required
 def api_health():
-    value = get_eeg()
-    status = predict_brain_state(value)
-    risk = calculate_risk(value)
 
-    log_data(value, status, risk)
+    bpm = get_bpm()
+
+    status = predict_heart_state(bpm)
+
+    risk = calculate_risk(bpm)
+
+    log_data(bpm, status, risk)
 
     return jsonify({
-        "eeg": value,
-        "status": status,
-        "risk": risk
-    })
 
+        "bpm": bpm,
+
+        "status": status,
+
+        "risk": risk
+
+    })
 # ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)

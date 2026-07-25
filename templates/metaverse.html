@@ -21,6 +21,7 @@ position:absolute;
 width:100%;
 height:100%;
 pointer-events:none;
+z-index:5;
 }
 
 .card{
@@ -33,66 +34,255 @@ pointer-events:auto;
 text-align:center;
 }
 
+
+
+/* ================= MAIN CARD ================= */
+
 #main{
-top:20px;
-left:50%;
-transform:translateX(-50%);
-width:340px;
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:360px;
+    text-align:center;
+    z-index:100;
 }
 
+/* ================= PATIENT CARDS ================= */
+
 .patient{
-width:140px;
-cursor:pointer;
+    position:absolute;
+    width:150px;
+    padding:12px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.patient:hover{
+    transform:scale(1.08);
+    box-shadow:0 0 20px cyan;
 }
 
 .patient img{
-width:110px;
-border-radius:50%;
-border:3px solid #00f0ff;
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    border:3px solid #00f0ff;
+    object-fit:cover;
 }
 
-#male{ left:30px; top:180px; }
-#female{ left:30px; bottom:120px; }
-#child{ right:30px; top:220px; }
+/* ================= PATIENT POSITIONS ================= */
+
+#male{
+    left:30px;
+    top:180px;
+}
+
+#female{
+    left:30px;
+    bottom:120px;
+}
+
+#child{
+    right:30px;
+    top:220px;
+}
+
+/* ================= BUTTONS ================= */
 
 button{
-margin-top:10px;
-padding:6px 12px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-background:#00f0ff;
-color:black;
+    margin:8px;
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:bold;
+    background:#00e5ff;
+    color:#000;
+    transition:.3s;
 }
+
+button:hover{
+    background:#00ffff;
+    transform:scale(1.05);
+    box-shadow:0 0 15px #00ffff;
+}
+
+/* ================= SURGICAL LABELS ================= */
+
+#leftLabel,
+#rightLabel{
+    position:absolute;
+    top:12%;
+    font-size:24px;
+    font-weight:bold;
+    color:#00e5ff;
+    display:none;
+    text-shadow:0 0 10px cyan;
+    z-index:100;
+}
+
+#leftLabel{
+    left:18%;
+}
+
+#rightLabel{
+    right:18%;
+}
+
+/* ================= DISEASE CARD ================= */
+
+#diseaseCard{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:650px;
+    background:rgba(0,0,0,.65);
+    backdrop-filter:blur(12px);
+    border-radius:18px;
+    padding:20px;
+    color:white;
+    display:none;
+    text-align:left;
+    z-index:100;
+    border:2px solid rgba(0,229,255,.4);
+    box-shadow:0 0 25px rgba(0,229,255,.3);
+}
+
+#diseaseCard h2{
+    color:#00ffff;
+    margin-top:0;
+}
+
+#diseaseCard p{
+    margin:8px 0;
+    line-height:1.6;
+}
+
+/* ================= ANATOMICAL MARKERS ================= */
+
+.anatomy-marker{
+    position:absolute;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background:rgba(15,20,35,0.92);
+    border:2px solid white;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+    pointer-events:auto;
+    z-index:200;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 8px rgba(255,255,255,.8);
+    transition:0.2s;
+}
+
+.anatomy-marker:hover{
+    background:#00e5ff;
+    color:black;
+    transform:translate(-50%,-50%) scale(1.2);
+}
+
+.anatomy-marker.affected{
+    background:#ff2020;
+    border-color:white;
+    box-shadow:0 0 10px red, 0 0 25px red;
+}
+
 </style>
 </head>
 
 <body>
 
-<div id="ui">
+    <div id="annotationLayer"></div>
 
-<div id="main" class="card">
-<h2>🫀 Cardiac Digital Twin</h2>
-<div id="bpm">-- BPM</div>
-<div id="status">Loading...</div>
+    <div id="ui">
 
-<button onclick="toggleSurgery()">Surgical View</button>
-</div>
+    <div id="main" class="card">
+        <h2>🫀 Cardiac Digital Twin</h2>
 
-<div id="male" class="card patient">
-<img src="/static/images/male.png">
-<div>Adult Male</div>
-</div>
+        <div id="bpm">-- BPM</div>
+        <div id="status">Loading...</div>
 
-<div id="female" class="card patient">
-<img src="/static/images/female.png">
-<div>Adult Female</div>
-</div>
+        <button id="surgeryBtn" onclick="toggleSurgery()">
+            Surgical View
+        </button>
+        
+        <div id="surgeryControls" style="display:none;">
+            
+            <h3>Surgical View</h3>
+            
+            <button onclick="showExterior()">
+                Exterior Heart
+            </button>
+            
+            <button onclick="showInterior()">
+                Interior Heart
+            </button>
+            
+            <button onclick="closeSurgery()">
+                Back
+            </button>
+        
+        </div>
+        
+    </div>
+    <div id="leftLabel">Exterior Heart</div>
 
-<div id="child" class="card patient">
-<img src="/static/images/child.png">
-<div>Child</div>
-</div>
+    <div id="rightLabel">Interior Heart</div>
+
+    <div id="male" class="card patient">
+        <img src="/static/images/male.png">
+        <div>Adult Male</div>
+    </div>
+
+    <div id="female" class="card patient">
+        <img src="/static/images/female.png">
+        <div>Adult Female</div>
+    </div>
+
+    <div id="child" class="card patient">
+        <img src="/static/images/child.png">
+        <div>Child</div>
+    </div>
+
+    <div id="diseaseCard">
+
+    <h2 id="partTitle">
+        Anatomical Region
+    </h2>
+
+    <p>
+        <b>Heart Part :</b>
+        <span id="partName">--</span>
+    </p>
+
+    <p>
+        <b>Predicted Condition :</b>
+        <span id="diseaseName">--</span>
+    </p>
+
+    <p>
+        <b>Cause :</b>
+        <span id="causeText">--</span>
+    </p>
+
+    <p>
+        <b>Symptoms :</b>
+        <span id="symptomText">--</span>
+    </p>
+
+    <p>
+        <b>Recommendation :</b>
+        <span id="recommendationText">--</span>
+    </p>
 
 </div>
 
@@ -113,7 +303,15 @@ camera.position.set(0,0,5);
 const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth,window.innerHeight);
 renderer.localClippingEnabled = true;
-document.body.appendChild(renderer.domElement);
+
+// Keep the canvas behind the UI
+renderer.domElement.style.position = "absolute";
+renderer.domElement.style.top = "0";
+renderer.domElement.style.left = "0";
+renderer.domElement.style.zIndex = "0";
+
+const canvas = renderer.domElement;
+document.body.insertBefore(canvas, document.getElementById("ui"));
 
 const controls = new THREE.OrbitControls(camera,renderer.domElement);
 controls.enableDamping=true;
@@ -135,9 +333,16 @@ scene.add(blueLight);
 const loader = new THREE.GLTFLoader();
 
 let heart;
+let exteriorHeart;
+let interiorHeart;
+
 let pulseSpeed = 0.01;
 let baseScale = 1.2;
 let blockageRing;
+let heartMarkers = [];
+let selectedMarker = null;
+let activeAnnotations = [];
+let currentSurgicalHeart = null;
 
 // Load heart model (place your realistic GLB here)
 loader.load("/static/heart.glb", function(gltf){
@@ -161,16 +366,77 @@ child.material.emissive = new THREE.Color(0x553300);
 });
 
 scene.add(heart);
+
 createBlockageRing();
 
+
 });
+
+// ================= LOAD EXTERIOR HEART =================
+
+loader.load(
+    "/static/exteriorHeart.glb",
+
+    function(gltf){
+        console.log("Exterior Heart Loaded");
+
+        exteriorHeart = gltf.scene;
+        exteriorHeart.scale.set(8,8,8);
+        exteriorHeart.position.set(-7,-3,0);
+        exteriorHeart.visible = false;
+
+        exteriorHeart.traverse((child) => {
+
+    if(child.isMesh){
+        console.log(
+            "HEART PART:",
+            child.name
+        );
+    }
+
+});
+
+        scene.add(exteriorHeart);
+    },
+
+    undefined,
+
+    function(error){
+        console.error("Exterior Heart Error:", error);
+    }
+);
+
+// ================= LOAD INTERIOR HEART =================
+
+loader.load(
+    "/static/interiorHeart.glb",
+
+    function(gltf){
+        console.log("Interior Heart Loaded");
+
+        interiorHeart = gltf.scene;
+        interiorHeart.scale.set(8,8,8);
+        interiorHeart.position.set(-7,-3,0);
+        interiorHeart.visible = false;
+
+        scene.add(interiorHeart);
+    },
+
+    undefined,
+
+    function(error){
+        console.error("Interior Heart Error:", error);
+    }
+);
+
+
 
 // ================= BLOCKAGE DOTTED RING =================
 
 function createBlockageRing(){
 
 const geometry = new THREE.CircleGeometry(0.7, 64);
-geometry.vertices?.shift?.();
+
 
 const material = new THREE.LineDashedMaterial({
 color: 0xff0000,
@@ -187,21 +453,421 @@ blockageRing.visible = false;
 scene.add(blockageRing);
 }
 
+// ================= CLEAR ANATOMICAL NUMBERS =================
+
+function updateAnnotations(){
+
+    activeAnnotations.forEach(item=>{
+
+        const position = item.part.position.clone();
+
+        item.model.localToWorld(position);
+
+        position.project(camera);
+
+        const x =
+            (position.x * 0.5 + 0.5)
+            * window.innerWidth;
+
+        const y =
+            (-position.y * 0.5 + 0.5)
+            * window.innerHeight;
+            
+        item.element.style.left = x + "px";
+        item.element.style.top = y + "px";
+
+    });
+
+}
+
+const exteriorParts = [
+
+    {
+        number: 1,
+        name: "Ascending Aorta",
+        nx: 0.50,
+        ny: 0.80,
+        nz: 0.55
+    },
+
+    {
+        number: 2,
+        name: "Pulmonary Artery",
+        nx: 0.67,
+        ny: 0.70,
+        nz: 0.60
+    },
+
+    {
+        number: 3,
+        name: "Superior Vena Cava",
+        nx: 0.34,
+        ny: 0.72,
+        nz: 0.58
+    },
+
+    {
+        number: 4,
+        name: "Inferior Vena Cava",
+        nx: 0.35,
+        ny: 0.18,
+        nz: 0.58
+    },
+
+    {
+        number: 5,
+        name: "Right Atrium",
+        nx: 0.34,
+        ny: 0.55,
+        nz: 0.68
+    },
+
+    {
+        number: 11,
+        name: "Left Coronary Artery",
+        nx: 0.68,
+        ny: 0.48,
+        nz: 0.72
+    },
+
+    {
+        number: 12,
+        name: "Left Anterior Descending Artery",
+        nx: 0.63,
+        ny: 0.38,
+        nz: 0.75
+    },
+
+    {
+        number: 13,
+        name: "Coronary Artery",
+        nx: 0.53,
+        ny: 0.58,
+        nz: 0.75
+    },
+
+    {
+        number: 14,
+        name: "Right Coronary Artery",
+        nx: 0.39,
+        ny: 0.47,
+        nz: 0.72
+    }
+
+];
+
+function createAnnotations(parts, model){
+
+    clearAnnotations();
+
+    const layer = document.getElementById("annotationLayer");
+
+    parts.forEach(part => {
+
+        const marker = document.createElement("div");
+
+        marker.className = "anatomy-marker";
+        marker.innerText = part.number;
+
+        marker.onclick = function(){
+            selectHeartPart(part, model, marker);
+        };
+
+        layer.appendChild(marker);
+
+        activeAnnotations.push({
+            part: part,
+            model: model,
+            element: marker
+        });
+    });
+}
+
+function clearAnnotations(){
+
+    activeAnnotations.forEach(item => {
+        item.element.remove();
+    });
+
+    activeAnnotations = [];
+}
+
+function createExteriorAnnotations(){
+
+    if(!exteriorHeart) return;
+
+    calculatePartPositions(
+        exteriorParts,
+        exteriorHeart
+    );
+
+    createAnnotations(
+        exteriorParts,
+        exteriorHeart
+    );
+}
+
+function calculatePartPositions(parts, model){
+
+    const box = new THREE.Box3().setFromObject(model);
+
+    const min = box.min;
+    const max = box.max;
+
+    parts.forEach(part => {
+
+        const worldPosition = new THREE.Vector3(
+            THREE.MathUtils.lerp(min.x, max.x, part.nx),
+            THREE.MathUtils.lerp(min.y, max.y, part.ny),
+            THREE.MathUtils.lerp(min.z, max.z, part.nz)
+        );
+
+        // Convert world coordinate back to model-local coordinate
+        part.position = model.worldToLocal(
+            worldPosition.clone()
+        );
+    });
+}
+
+function createInteriorAnnotations(){
+
+    if(!interiorHeart) return;
+
+    createAnnotations(
+        interiorParts,
+        interiorHeart
+    );
+}
+
+// ============ UPDATE ANATOMICAL MARKERS ============
+
+function selectHeartPart(part, model, element){
+
+    // Remove previous red selection
+    document
+        .querySelectorAll(".anatomy-marker")
+        .forEach(marker => {
+            marker.classList.remove("affected");
+        });
+
+    // Highlight clicked number
+    element.classList.add("affected");
+
+    // IMPORTANT:
+    // Don't move or zoom the camera yet.
+    // First we will correctly attach all numbers to the heart.
+
+    // Show selected heart-part information
+    showPartInformation(part);
+}
+
+function showPartInformation(part){
+
+    const diseaseCard = document.getElementById("diseaseCard");
+
+    document.getElementById("partTitle").innerText =
+        "Region " + part.number + " - " + part.name;
+
+    document.getElementById("partName").innerText =
+        part.name;
+
+    let disease = "No specific condition assigned";
+    let cause = "No specific cause assigned.";
+    let symptoms = "No specific symptoms assigned.";
+    let recommendation = "Clinical assessment is recommended.";
+
+    if(
+        part.name.includes("Coronary") ||
+        part.name.includes("Anterior Descending")
+    ){
+        disease = "Coronary Artery Disease";
+        cause = "Plaque buildup may reduce blood flow in the coronary artery.";
+        symptoms = "Chest pain, shortness of breath, and fatigue.";
+        recommendation = "Consult a cardiologist for further cardiovascular evaluation.";
+    }
+
+    document.getElementById("diseaseName").innerText = disease;
+    document.getElementById("causeText").innerText = cause;
+    document.getElementById("symptomText").innerText = symptoms;
+    document.getElementById("recommendationText").innerText = recommendation;
+
+    diseaseCard.style.display = "block";
+}
+
 // ================= SURGICAL MODE =================
 
-let surgicalMode = false;
-const clipPlane = new THREE.Plane(new THREE.Vector3(-1,0,0),0);
-
 function toggleSurgery(){
-surgicalMode = !surgicalMode;
 
-if(heart){
-heart.traverse(child=>{
-if(child.isMesh){
-child.material.clippingPlanes = surgicalMode ? [clipPlane] : [];
+    console.log("Surgical View Activated");
+
+    // 1. Hide the normal/main heart
+    if(heart){
+        heart.visible = false;
+    }
+
+    // 2. Hide both surgical models first
+    if(exteriorHeart){
+        exteriorHeart.visible = false;
+    }
+
+    if(interiorHeart){
+        interiorHeart.visible = false;
+    }
+
+    // 3. Hide the Surgical View button
+    const surgeryBtn = document.getElementById("surgeryBtn");
+
+    if(surgeryBtn){
+        surgeryBtn.style.display = "none";
+    }
+
+    // 4. Show Exterior / Interior / Back controls
+    const surgeryControls = document.getElementById("surgeryControls");
+
+    if(surgeryControls){
+        surgeryControls.style.display = "block";
+    }
+
+    // 5. Clear old anatomical numbers
+    clearAnnotations();
+
+    // 6. Hide disease information initially
+    const diseaseCard = document.getElementById("diseaseCard");
+
+    if(diseaseCard){
+        diseaseCard.style.display = "none";
+    }
+
+    // 7. Reset camera
+    camera.position.set(0,0,8);
+    controls.target.set(0,0,0);
+    controls.update();
+
+    // 8. Open Exterior Heart by default
+    showExterior();
 }
-});
+
+function centerHeartModel(model){
+
+    // Reset position first
+    model.position.set(0, 0, 0);
+
+    // Get bounding box
+    const box = new THREE.Box3().setFromObject(model);
+
+    const center = new THREE.Vector3();
+    const size = new THREE.Vector3();
+
+    box.getCenter(center);
+    box.getSize(size);
+
+    // Move GLB so its real center is at 0,0,0
+    model.position.set(
+        -center.x,
+        -center.y,
+        -center.z
+    );
+
+    // Get largest dimension
+    const maxSize = Math.max(
+        size.x,
+        size.y,
+        size.z
+    );
+
+    // Position camera so complete heart is visible
+    camera.position.set(
+        0,
+        0,
+        maxSize * 1.8
+    );
+
+    controls.target.set(0, 0, 0);
+
+    camera.lookAt(0, 0, 0);
+
+    controls.update();
 }
+
+function showExterior(){
+
+    if(heart) heart.visible = false;
+
+    if(interiorHeart){
+        interiorHeart.visible = false;
+    }
+
+    if(exteriorHeart){
+
+        exteriorHeart.visible = true;
+
+        exteriorHeart.position.set(0,0,0);
+        exteriorHeart.scale.set(1,1,1);
+
+        // Center heart
+        centerHeartModel(exteriorHeart);
+
+        // IMPORTANT: Create exterior numbers
+        createExteriorAnnotations();
+
+        currentSurgicalHeart = exteriorHeart;
+    }
+
+    // Hide disease information until number is clicked
+    document.getElementById("diseaseCard").style.display = "none";
+}
+
+function showInterior(){
+
+    if(heart) heart.visible = false;
+
+    if(exteriorHeart){
+        exteriorHeart.visible = false;
+    }
+
+    if(interiorHeart){
+
+        interiorHeart.visible = true;
+
+        interiorHeart.position.set(0,0,0);
+        interiorHeart.scale.set(1,1,1);
+
+        // Center heart
+        centerHeartModel(interiorHeart);
+
+        // IMPORTANT: Create interior numbers
+        createInteriorAnnotations();
+
+        currentSurgicalHeart = interiorHeart;
+    }
+
+    // Hide disease information until number is clicked
+    document.getElementById("diseaseCard").style.display = "none";
+}
+
+function closeSurgery(){
+
+    clearAnnotations();
+
+    if(heart){
+        heart.visible = true;
+    }
+
+    if(exteriorHeart){
+        exteriorHeart.visible = false;
+    }
+
+    if(interiorHeart){
+        interiorHeart.visible = false;
+    }
+
+    document.getElementById("surgeryControls").style.display = "none";
+    document.getElementById("surgeryBtn").style.display = "inline-block";
+    document.getElementById("diseaseCard").style.display = "none";
+
+    camera.position.set(0,0,5);
+    controls.target.set(0,0,0);
+    controls.update();
 }
 
 // ================= HEART ANIMATION =================
@@ -209,10 +875,20 @@ child.material.clippingPlanes = surgicalMode ? [clipPlane] : [];
 function animate(){
 requestAnimationFrame(animate);
 
-if(heart){
-const pulse = 1 + Math.sin(Date.now()*pulseSpeed)*0.08;
-heart.scale.set(baseScale*pulse,baseScale*pulse,baseScale*pulse);
+if(heart && heart.visible){
+
+    const pulse = 1 + Math.sin(Date.now()*pulseSpeed)*0.08;
+
+    heart.scale.set(
+        baseScale*pulse,
+        baseScale*pulse,
+        baseScale*pulse
+    );
+
+    heart.rotation.y += 0.003;
 }
+
+updateAnnotations();
 
 controls.update();
 renderer.render(scene,camera);
@@ -243,7 +919,7 @@ try{
 const res = await fetch("/api/health");
 const data = await res.json();
 
-document.getElementById("bpm").innerText=Math.round(data.eeg)+" BPM";
+document.getElementById("bpm").innerText=Math.round(data.bpm)+" BPM";
 
 if(data.status.includes("Abnormal")){
 document.getElementById("status").innerText="⚠ Blockage Detected";
@@ -271,7 +947,7 @@ camera.updateProjectionMatrix();
 renderer.setSize(window.innerWidth,window.innerHeight);
 });
 
-</script>
 
+</script>
 </body>
 </html>
