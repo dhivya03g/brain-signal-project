@@ -2,9 +2,11 @@
 <html>
 <head>
     <title>AI-Based Cardiac Digital Twin Dashboard</title>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
+
         body {
             margin: 0;
             font-family: Arial;
@@ -39,134 +41,2335 @@
             font-weight:bold;
         }
 
-        .normal{ color:#00ff99; }
-        .abnormal{ color:#ff4d4d; }
+        .normal{
+            color:#00ff99;
+        }
+
+        .abnormal{
+            color:#ff4d4d;
+        }
 
         canvas{
             background:#fff;
             border-radius:10px;
         }
-    </style>
-</head>
 
-<body>
 
-<div class="topbar">
-    <h2>🫀 Cardiac Digital Twin Dashboard</h2>
-    <div>
-        <a href="/admin" style="color:cyan">Admin</a>
-        <a href="/logout" style="color:cyan;margin-left:15px">Logout</a>
-    </div>
-</div>
+        /* ==================================================
+           CARDIAC RISK + HEART DISEASE SECTIONS
+        ================================================== */
 
-<div class="dashboard">
+        .section-title{
+            width:100%;
+            text-align:center;
+            margin-top:30px;
+            margin-bottom:5px;
+        }
 
-    <div class="card">
-        <h3>Heart Rate</h3>
-        <div class="value bpm">{{ bpm }} BPM</div>
-    </div>
+        .patient-form{
+            width:90%;
+            max-width:1200px;
+            background:rgba(255,255,255,0.08);
+            padding:30px;
+            border-radius:15px;
+        }
 
-    <div class="card">
-        <h3>Status</h3>
-        <div class="value status {% if 'Abnormal' in status %}abnormal{% else %}normal{% endif %}">
-            {{ status }}
-        </div>
-    </div>
+        .form-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+            gap:20px;
+        }
 
-    <div class="card">
-        <h3>Risk %</h3>
-        <div class="value risk">{{ risk }}%</div>
-    </div>
+        .input-group{
+            display:flex;
+            flex-direction:column;
+        }
 
-    <div class="card">
-        <h3>Model Accuracy</h3>
-        <div class="value">{{ (accuracy*100)|round(1) }}%</div>
-    </div>
+        .input-group label{
+            margin-bottom:8px;
+            font-weight:bold;
+        }
 
-    <div class="card">
-    <h3>3D Cardiac Twin</h3>
+        .input-group input,
+        .input-group select{
+            padding:12px;
+            border:none;
+            border-radius:8px;
+            font-size:16px;
+            outline:none;
+        }
 
-    <a href="/metaverse">
-        <button style="
-            padding:12px 25px;
+        .predict-button{
+            margin-top:25px;
+            padding:14px 30px;
             background:#00e5ff;
             border:none;
             border-radius:10px;
             cursor:pointer;
-            font-weight:bold;">
-            Open Metaverse
-        </button>
-    </a>
-</div>
+            font-weight:bold;
+            font-size:16px;
+        }
 
-    <div class="card" style="width:600px">
-        <h3>Live Heart Rate Graph</h3>
-        <canvas id="chart"></canvas>
+        .predict-button:hover{
+            opacity:0.85;
+        }
+
+
+        /* PARAMETER CARDS */
+
+        .parameter-card{
+            width:200px;
+            background:rgba(255,255,255,0.08);
+            padding:20px;
+            border-radius:15px;
+            text-align:center;
+        }
+
+        .parameter-value{
+            font-size:23px;
+            font-weight:bold;
+            margin-top:10px;
+        }
+
+
+        /* AI RESULT */
+
+        .risk-result-card{
+            width:280px;
+            background:rgba(255,255,255,0.12);
+            padding:25px;
+            border-radius:15px;
+            text-align:center;
+        }
+
+        .low-risk{
+            color:#00ff99;
+        }
+
+        .moderate-risk{
+            color:#ffd166;
+        }
+
+        .high-risk{
+            color:#ff4d4d;
+        }
+
+        #predictionMessage{
+            margin-top:15px;
+            font-size:16px;
+        }
+
+        #errorMessage,
+        #heartDiseaseError{
+            color:#ff8080;
+            margin-top:15px;
+            font-weight:bold;
+        }
+
+
+        /* ==================================================
+           ECG ARRHYTHMIA CNN
+        ================================================== */
+
+        .ecg-result-card{
+            width:230px;
+            background:rgba(255,255,255,0.12);
+            padding:25px;
+            border-radius:15px;
+            text-align:center;
+        }
+
+        .ecg-chart-container{
+            width:90%;
+            max-width:1200px;
+            background:rgba(255,255,255,0.08);
+            padding:30px;
+            border-radius:15px;
+            text-align:center;
+        }
+
+        .ecg-alert{
+            width:90%;
+            max-width:1200px;
+            padding:20px;
+            border-radius:15px;
+            text-align:center;
+            font-size:20px;
+            font-weight:bold;
+        }
+
+        .ecg-normal-alert{
+            background:rgba(0,255,153,0.15);
+            color:#00ff99;
+        }
+
+        .ecg-danger-alert{
+            background:rgba(255,77,77,0.15);
+            color:#ff4d4d;
+        }
+
+        #ecgChart{
+            background:white;
+            border-radius:10px;
+            max-height:350px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ==================================================
+     EXISTING TOP BAR
+================================================== -->
+
+<div class="topbar">
+
+    <h2>🫀 Cardiac Digital Twin Dashboard</h2>
+
+    <div>
+
+        <a href="/admin" style="color:cyan">
+            Admin
+        </a>
+
+        <a
+            href="/logout"
+            style="color:cyan;margin-left:15px"
+        >
+            Logout
+        </a>
+
     </div>
 
 </div>
 
+
+<!-- ==================================================
+     EXISTING DASHBOARD
+================================================== -->
+
+<div class="dashboard">
+
+
+    <div class="card">
+
+        <h3>Heart Rate</h3>
+
+        <div class="value bpm">
+            {{ bpm }} BPM
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>Status</h3>
+
+        <div
+            class="value status
+            {% if 'Abnormal' in status %}
+            abnormal
+            {% else %}
+            normal
+            {% endif %}"
+        >
+
+            {{ status }}
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>Risk %</h3>
+
+        <div class="value risk">
+            {{ risk }}%
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>Model Accuracy</h3>
+
+        <div class="value">
+            {{ (accuracy*100)|round(1) }}%
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>3D Cardiac Twin</h3>
+
+        <a href="/metaverse">
+
+            <button
+                style="
+                padding:12px 25px;
+                background:#00e5ff;
+                border:none;
+                border-radius:10px;
+                cursor:pointer;
+                font-weight:bold;"
+            >
+
+                Open Metaverse
+
+            </button>
+
+        </a>
+
+    </div>
+
+
+    <div
+        class="card"
+        style="width:600px"
+    >
+
+        <h3>
+            Live Heart Rate Graph
+        </h3>
+
+        <canvas id="chart"></canvas>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ==================================================
+     PATIENT CARDIAC PARAMETERS
+================================================== -->
+
+<h2 class="section-title">
+    🩺 Patient Cardiac Parameters
+</h2>
+
+
+<div class="dashboard">
+
+
+    <div class="patient-form">
+
+
+        <div class="form-grid">
+
+
+            <div class="input-group">
+
+                <label>Age</label>
+
+                <input
+                    type="number"
+                    id="age"
+                    value="45"
+                    min="1"
+                    max="120"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Gender</label>
+
+                <select id="gender">
+
+                    <option value="1">
+                        Female
+                    </option>
+
+                    <option value="2">
+                        Male
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Height (cm)</label>
+
+                <input
+                    type="number"
+                    id="height"
+                    value="165"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Weight (kg)</label>
+
+                <input
+                    type="number"
+                    id="weight"
+                    value="70"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Systolic BP</label>
+
+                <input
+                    type="number"
+                    id="ap_hi"
+                    value="120"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Diastolic BP</label>
+
+                <input
+                    type="number"
+                    id="ap_lo"
+                    value="80"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Cholesterol</label>
+
+                <select id="cholesterol">
+
+                    <option value="1">
+                        Normal
+                    </option>
+
+                    <option value="2">
+                        Above Normal
+                    </option>
+
+                    <option value="3">
+                        High
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Blood Glucose</label>
+
+                <select id="gluc">
+
+                    <option value="1">
+                        Normal
+                    </option>
+
+                    <option value="2">
+                        Above Normal
+                    </option>
+
+                    <option value="3">
+                        High
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Smoking</label>
+
+                <select id="smoke">
+
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Alcohol</label>
+
+                <select id="alco">
+
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Physical Activity</label>
+
+                <select id="active">
+
+                    <option value="1">
+                        Active
+                    </option>
+
+                    <option value="0">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+
+        </div>
+
+
+        <div style="text-align:center">
+
+            <button
+                class="predict-button"
+                onclick="predictCardiacRisk()"
+            >
+                Analyze Cardiac Risk
+            </button>
+
+        </div>
+
+
+        <div
+            id="errorMessage"
+            style="text-align:center"
+        ></div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ==================================================
+     CARDIAC HEALTH PARAMETERS
+================================================== -->
+
+<h2 class="section-title">
+    📊 Cardiac Health Parameters
+</h2>
+
+
+<div class="dashboard">
+
+
+    <div class="parameter-card">
+
+        <h3>Blood Pressure</h3>
+
+        <div
+            class="parameter-value"
+            id="displayBP"
+        >
+            -- / --
+        </div>
+
+        <p>mmHg</p>
+
+    </div>
+
+
+    <div class="parameter-card">
+
+        <h3>BMI</h3>
+
+        <div
+            class="parameter-value"
+            id="displayBMI"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="parameter-card">
+
+        <h3>Cholesterol</h3>
+
+        <div
+            class="parameter-value"
+            id="displayCholesterol"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="parameter-card">
+
+        <h3>Blood Glucose</h3>
+
+        <div
+            class="parameter-value"
+            id="displayGlucose"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="parameter-card">
+
+        <h3>Smoking</h3>
+
+        <div
+            class="parameter-value"
+            id="displaySmoke"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="parameter-card">
+
+        <h3>Alcohol</h3>
+
+        <div
+            class="parameter-value"
+            id="displayAlcohol"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="parameter-card">
+
+        <h3>Physical Activity</h3>
+
+        <div
+            class="parameter-value"
+            id="displayActivity"
+        >
+            --
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ==================================================
+     AI CARDIAC RISK RESULT
+================================================== -->
+
+<h2 class="section-title">
+    🤖 AI Cardiovascular Risk Assessment
+</h2>
+
+
+<div class="dashboard">
+
+
+    <div class="risk-result-card">
+
+        <h3>Cardiovascular Risk</h3>
+
+        <div
+            class="value"
+            id="cardiacRisk"
+        >
+            --%
+        </div>
+
+    </div>
+
+
+    <div class="risk-result-card">
+
+        <h3>AI Risk Status</h3>
+
+        <div
+            class="value"
+            id="cardiacRiskLevel"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="risk-result-card">
+
+        <h3>
+            Cardiac Risk Model Accuracy
+        </h3>
+
+        <div
+            class="value"
+            id="cardiacModelAccuracy"
+        >
+            71.97%
+        </div>
+
+    </div>
+
+
+    <div class="risk-result-card">
+
+        <h3>AI Prediction</h3>
+
+        <div
+            class="value"
+            id="cardiacPrediction"
+        >
+            --
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ==================================================
+     HEART DISEASE PREDICTION
+================================================== -->
+
+<h2 class="section-title">
+    🫀 Heart Disease Prediction
+</h2>
+
+
+<div class="dashboard">
+
+
+    <div class="patient-form">
+
+
+        <div class="form-grid">
+
+
+            <div class="input-group">
+
+                <label>Chest Pain Type</label>
+
+                <select id="hd_cp">
+
+                    <option value="0">
+                        Typical Angina
+                    </option>
+
+                    <option value="1">
+                        Atypical Angina
+                    </option>
+
+                    <option value="2">
+                        Non-Anginal Pain
+                    </option>
+
+                    <option value="3">
+                        Asymptomatic
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Resting ECG</label>
+
+                <select id="hd_restecg">
+
+                    <option value="0">
+                        Normal
+                    </option>
+
+                    <option value="1">
+                        ST-T Abnormality
+                    </option>
+
+                    <option value="2">
+                        LV Hypertrophy
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Maximum Heart Rate</label>
+
+                <input
+                    type="number"
+                    id="hd_thalach"
+                    value="150"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    Exercise Induced Angina
+                </label>
+
+                <select id="hd_exang">
+
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    ST Depression (Oldpeak)
+                </label>
+
+                <input
+                    type="number"
+                    id="hd_oldpeak"
+                    value="1.0"
+                    step="0.1"
+                >
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    ST Segment Slope
+                </label>
+
+                <select id="hd_slope">
+
+                    <option value="0">
+                        Upsloping
+                    </option>
+
+                    <option value="1">
+                        Flat
+                    </option>
+
+                    <option value="2">
+                        Downsloping
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    Major Vessels (CA)
+                </label>
+
+                <select id="hd_ca">
+
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>Thalassemia</label>
+
+                <select id="hd_thal">
+
+                    <option value="0">
+                        Normal
+                    </option>
+
+                    <option value="1">
+                        Fixed Defect
+                    </option>
+
+                    <option value="2">
+                        Reversible Defect
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    Fasting Blood Sugar &gt; 120 mg/dL
+                </label>
+
+                <select id="hd_fbs">
+
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="input-group">
+
+                <label>
+                    Cholesterol (mg/dL)
+                </label>
+
+                <input
+                    type="number"
+                    id="hd_chol"
+                    value="220"
+                >
+
+            </div>
+
+
+        </div>
+
+
+        <div style="text-align:center">
+
+            <button
+                class="predict-button"
+                onclick="predictHeartDisease()"
+            >
+
+                Predict Heart Disease
+
+            </button>
+
+        </div>
+
+
+        <div
+            id="heartDiseaseError"
+            style="text-align:center"
+        ></div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ==================================================
+     HEART DISEASE RESULT
+================================================== -->
+
+<h2 class="section-title">
+    🧠 AI Heart Disease Assessment
+</h2>
+
+
+<div class="dashboard">
+
+
+    <div class="risk-result-card">
+
+        <h3>
+            Heart Disease Status
+        </h3>
+
+        <div
+            class="value"
+            id="heartDiseaseStatus"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="risk-result-card">
+
+        <h3>
+            Disease Probability
+        </h3>
+
+        <div
+            class="value"
+            id="heartDiseaseProbability"
+        >
+            --%
+        </div>
+
+    </div>
+
+
+    <div class="risk-result-card">
+
+        <h3>
+            Heart Disease Model Accuracy
+        </h3>
+
+        <div
+            class="value"
+            id="heartDiseaseAccuracy"
+        >
+            81.67%
+        </div>
+
+    </div>
+
+
+    <div class="risk-result-card">
+
+        <h3>
+            AI Prediction
+        </h3>
+
+        <div
+            class="value"
+            id="heartDiseasePrediction"
+        >
+            --
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<!-- ==================================================
+     ECG ARRHYTHMIA CNN SECTION
+================================================== -->
+
+<h2 class="section-title">
+    ❤️ ECG Arrhythmia Detection
+</h2>
+
+
+<div class="dashboard">
+
+
+    <div class="ecg-result-card">
+
+        <h3>ECG Rhythm</h3>
+
+        <div
+            class="value"
+            id="ecgRhythm"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="ecg-result-card">
+
+        <h3>Arrhythmia Class</h3>
+
+        <div
+            class="value"
+            id="arrhythmiaClass"
+        >
+            --
+        </div>
+
+    </div>
+
+
+    <div class="ecg-result-card">
+
+        <h3>CNN Confidence</h3>
+
+        <div
+            class="value"
+            id="arrhythmiaConfidence"
+        >
+            --%
+        </div>
+
+    </div>
+
+
+    <div class="ecg-result-card">
+
+        <h3>CNN Model Accuracy</h3>
+
+        <div class="value">
+            83.63%
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<div class="dashboard">
+
+    <div
+        id="ecgAlert"
+        class="ecg-alert"
+    >
+        Waiting for ECG analysis...
+    </div>
+
+</div>
+
+
+<div class="dashboard">
+
+    <div class="ecg-chart-container">
+
+        <h3>
+            Live ECG Waveform
+        </h3>
+
+        <canvas id="ecgChart"></canvas>
+
+    </div>
+
+</div>
+
+
+
+<!-- ==================================================
+     JAVASCRIPT
+================================================== -->
+
 <script>
-const ctx = document.getElementById('chart').getContext('2d');
 
-let dataArr = [{{ bpm }}];
 
-const chart = new Chart(ctx,{
-    type:'line',
-    data:{
-        labels:dataArr.map((_,i)=>i),
-        datasets:[{
-            label:'Heart Rate (BPM)',
-            data:dataArr,
-            borderColor:'cyan',
-            borderWidth:3,
-            fill:false,
-            tension:0.4
-        }]
-    },
-    options:{
-        responsive:true,
-        plugins:{
-            legend:{
-                labels:{
-                    color:"white"
-                }
-            }
+/* ==================================================
+   HEART RATE GRAPH
+================================================== */
+
+
+const ctx =
+    document
+    .getElementById('chart')
+    .getContext('2d');
+
+
+let dataArr = [
+    {{ bpm }}
+];
+
+
+const chart = new Chart(
+    ctx,
+    {
+
+        type:'line',
+
+        data:{
+
+            labels:
+                dataArr.map(
+                    (_,i)=>i
+                ),
+
+            datasets:[{
+
+                label:'Heart Rate (BPM)',
+
+                data:dataArr,
+
+                borderColor:'cyan',
+
+                borderWidth:3,
+
+                fill:false,
+
+                tension:0.4
+
+            }]
+
         },
-        scales:{
-            x:{
-                ticks:{color:"white"},
-                grid:{color:"rgba(255,255,255,0.1)"}
+
+
+        options:{
+
+            responsive:true,
+
+            plugins:{
+
+                legend:{
+
+                    labels:{
+                        color:"white"
+                    }
+
+                }
+
             },
-            y:{
-                ticks:{color:"white"},
-                grid:{color:"rgba(255,255,255,0.1)"}
+
+
+            scales:{
+
+                x:{
+
+                    ticks:{
+                        color:"white"
+                    },
+
+                    grid:{
+                        color:"rgba(255,255,255,0.1)"
+                    }
+
+                },
+
+
+                y:{
+
+                    ticks:{
+                        color:"white"
+                    },
+
+                    grid:{
+                        color:"rgba(255,255,255,0.1)"
+                    }
+
+                }
+
             }
+
         }
+
     }
-});
+);
 
-setInterval(async()=>{
 
-    const res = await fetch('/api/health');
-    const d = await res.json();
 
-    document.querySelector('.bpm').innerText = d.bpm + " BPM";
-    document.querySelector('.status').innerText = d.status;
-    document.querySelector('.risk').innerText = d.risk + "%";
+/* ==================================================
+   HEART RATE UPDATE
+================================================== */
 
-    dataArr.push(d.bpm);
 
-    if(dataArr.length>20)
-        dataArr.shift();
+setInterval(
+    async()=>{
 
-    chart.data.labels = dataArr.map((_,i)=>i);
-    chart.data.datasets[0].data = dataArr;
+        try{
 
-    chart.update();
+            const res =
+                await fetch(
+                    '/api/health'
+                );
 
-},2000);
+
+            const d =
+                await res.json();
+
+
+            document
+                .querySelector('.bpm')
+                .innerText =
+                d.bpm + " BPM";
+
+
+            document
+                .querySelector('.status')
+                .innerText =
+                d.status;
+
+
+            document
+                .querySelector('.risk')
+                .innerText =
+                d.risk + "%";
+
+
+            dataArr.push(
+                d.bpm
+            );
+
+
+            if(dataArr.length > 20){
+
+                dataArr.shift();
+
+            }
+
+
+            chart.data.labels =
+                dataArr.map(
+                    (_,i)=>i
+                );
+
+
+            chart
+                .data
+                .datasets[0]
+                .data =
+                dataArr;
+
+
+            chart.update();
+
+        }
+
+        catch(error){
+
+            console.log(
+                "Heart Rate API Error:",
+                error
+            );
+
+        }
+
+    },
+
+    2000
+);
+
+
+
+/* ==================================================
+   CARDIAC RISK PREDICTION
+================================================== */
+
+
+async function predictCardiacRisk(){
+
+
+    const errorMessage =
+        document.getElementById(
+            "errorMessage"
+        );
+
+
+    errorMessage.innerText = "";
+
+
+    const patientData = {
+
+        age:
+            parseFloat(
+                document
+                .getElementById("age")
+                .value
+            ),
+
+        gender:
+            parseInt(
+                document
+                .getElementById("gender")
+                .value
+            ),
+
+        height:
+            parseFloat(
+                document
+                .getElementById("height")
+                .value
+            ),
+
+        weight:
+            parseFloat(
+                document
+                .getElementById("weight")
+                .value
+            ),
+
+        ap_hi:
+            parseFloat(
+                document
+                .getElementById("ap_hi")
+                .value
+            ),
+
+        ap_lo:
+            parseFloat(
+                document
+                .getElementById("ap_lo")
+                .value
+            ),
+
+        cholesterol:
+            parseInt(
+                document
+                .getElementById("cholesterol")
+                .value
+            ),
+
+        gluc:
+            parseInt(
+                document
+                .getElementById("gluc")
+                .value
+            ),
+
+        smoke:
+            parseInt(
+                document
+                .getElementById("smoke")
+                .value
+            ),
+
+        alco:
+            parseInt(
+                document
+                .getElementById("alco")
+                .value
+            ),
+
+        active:
+            parseInt(
+                document
+                .getElementById("active")
+                .value
+            )
+
+    };
+
+
+    try{
+
+
+        const response =
+            await fetch(
+
+                "/api/cardiac-risk",
+
+                {
+
+                    method:"POST",
+
+                    headers:{
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(
+                            patientData
+                        )
+
+                }
+
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if(!response.ok){
+
+            throw new Error(
+                result.error ||
+                "Prediction failed"
+            );
+
+        }
+
+
+        document
+            .getElementById(
+                "displayBP"
+            )
+            .innerText =
+
+            result.parameters.systolic_bp
+            +
+            " / "
+            +
+            result.parameters.diastolic_bp;
+
+
+        document
+            .getElementById(
+                "displayBMI"
+            )
+            .innerText =
+            result.parameters.bmi;
+
+
+
+        let cholesterolText =
+            "Normal";
+
+
+        if(
+            result.parameters.cholesterol === 2
+        ){
+
+            cholesterolText =
+                "Above Normal";
+
+        }
+
+
+        if(
+            result.parameters.cholesterol === 3
+        ){
+
+            cholesterolText =
+                "High";
+
+        }
+
+
+        document
+            .getElementById(
+                "displayCholesterol"
+            )
+            .innerText =
+            cholesterolText;
+
+
+
+        let glucoseText =
+            "Normal";
+
+
+        if(
+            result.parameters.glucose === 2
+        ){
+
+            glucoseText =
+                "Above Normal";
+
+        }
+
+
+        if(
+            result.parameters.glucose === 3
+        ){
+
+            glucoseText =
+                "High";
+
+        }
+
+
+        document
+            .getElementById(
+                "displayGlucose"
+            )
+            .innerText =
+            glucoseText;
+
+
+
+        document
+            .getElementById(
+                "displaySmoke"
+            )
+            .innerText =
+
+            result.parameters.smoke === 1
+            ?
+            "Yes"
+            :
+            "No";
+
+
+
+        document
+            .getElementById(
+                "displayAlcohol"
+            )
+            .innerText =
+
+            result.parameters.alcohol === 1
+            ?
+            "Yes"
+            :
+            "No";
+
+
+
+        document
+            .getElementById(
+                "displayActivity"
+            )
+            .innerText =
+
+            result.parameters.active === 1
+            ?
+            "Active"
+            :
+            "Inactive";
+
+
+
+        document
+            .getElementById(
+                "cardiacRisk"
+            )
+            .innerText =
+
+            result.risk_percentage
+            +
+            "%";
+
+
+
+        const riskLevel =
+            document.getElementById(
+                "cardiacRiskLevel"
+            );
+
+
+        riskLevel.innerText =
+            result.risk_level;
+
+
+        riskLevel.classList.remove(
+            "low-risk",
+            "moderate-risk",
+            "high-risk"
+        );
+
+
+        if(
+            result.risk_level ===
+            "Low Risk"
+        ){
+
+            riskLevel
+                .classList
+                .add(
+                    "low-risk"
+                );
+
+        }
+
+
+        else if(
+            result.risk_level ===
+            "Moderate Risk"
+        ){
+
+            riskLevel
+                .classList
+                .add(
+                    "moderate-risk"
+                );
+
+        }
+
+
+        else{
+
+            riskLevel
+                .classList
+                .add(
+                    "high-risk"
+                );
+
+        }
+
+
+
+        document
+            .getElementById(
+                "cardiacModelAccuracy"
+            )
+            .innerText =
+
+            result.model_accuracy
+            +
+            "%";
+
+
+
+        const predictionElement =
+            document.getElementById(
+                "cardiacPrediction"
+            );
+
+
+        if(
+            result.prediction === 1
+        ){
+
+            predictionElement.innerText =
+                "Elevated Risk";
+
+            predictionElement.className =
+                "value abnormal";
+
+        }
+
+        else{
+
+            predictionElement.innerText =
+                "Lower Risk";
+
+            predictionElement.className =
+                "value normal";
+
+        }
+
+
+    }
+
+    catch(error){
+
+
+        console.error(
+            "Cardiac Risk Error:",
+            error
+        );
+
+
+        errorMessage.innerText =
+            "Error: "
+            +
+            error.message;
+
+    }
+
+}
+
+
+
+/* ==================================================
+   HEART DISEASE PREDICTION
+================================================== */
+
+
+async function predictHeartDisease(){
+
+
+    const errorElement =
+        document.getElementById(
+            "heartDiseaseError"
+        );
+
+
+    errorElement.innerText = "";
+
+
+    const genderValue =
+        parseInt(
+            document
+            .getElementById("gender")
+            .value
+        );
+
+
+    const clevelandSex =
+        genderValue === 2
+        ?
+        1
+        :
+        0;
+
+
+    const patientData = {
+
+        age:
+            parseFloat(
+                document
+                .getElementById("age")
+                .value
+            ),
+
+        sex:
+            clevelandSex,
+
+        cp:
+            parseInt(
+                document
+                .getElementById("hd_cp")
+                .value
+            ),
+
+        trestbps:
+            parseFloat(
+                document
+                .getElementById("ap_hi")
+                .value
+            ),
+
+        chol:
+            parseFloat(
+                document
+                .getElementById("hd_chol")
+                .value
+            ),
+
+        fbs:
+            parseInt(
+                document
+                .getElementById("hd_fbs")
+                .value
+            ),
+
+        restecg:
+            parseInt(
+                document
+                .getElementById("hd_restecg")
+                .value
+            ),
+
+        thalach:
+            parseFloat(
+                document
+                .getElementById("hd_thalach")
+                .value
+            ),
+
+        exang:
+            parseInt(
+                document
+                .getElementById("hd_exang")
+                .value
+            ),
+
+        oldpeak:
+            parseFloat(
+                document
+                .getElementById("hd_oldpeak")
+                .value
+            ),
+
+        slope:
+            parseInt(
+                document
+                .getElementById("hd_slope")
+                .value
+            ),
+
+        ca:
+            parseInt(
+                document
+                .getElementById("hd_ca")
+                .value
+            ),
+
+        thal:
+            parseInt(
+                document
+                .getElementById("hd_thal")
+                .value
+            )
+
+    };
+
+
+    try{
+
+
+        const response =
+            await fetch(
+
+                "/api/heart-disease",
+
+                {
+
+                    method:"POST",
+
+                    headers:{
+
+                        "Content-Type":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(
+                            patientData
+                        )
+
+                }
+
+            );
+
+
+        const result =
+            await response.json();
+
+
+        if(!response.ok){
+
+            throw new Error(
+                result.error ||
+                "Heart disease prediction failed"
+            );
+
+        }
+
+
+
+        document
+            .getElementById(
+                "heartDiseaseProbability"
+            )
+            .innerText =
+
+            result.disease_probability
+            +
+            "%";
+
+
+
+        document
+            .getElementById(
+                "heartDiseaseAccuracy"
+            )
+            .innerText =
+
+            result.model_accuracy
+            +
+            "%";
+
+
+
+        const statusElement =
+            document.getElementById(
+                "heartDiseaseStatus"
+            );
+
+
+        statusElement.innerText =
+            result.status;
+
+
+
+        const predictionElement =
+            document.getElementById(
+                "heartDiseasePrediction"
+            );
+
+
+        if(
+            result.prediction === 1
+        ){
+
+            predictionElement.innerText =
+                "Disease Detected";
+
+            predictionElement.className =
+                "value abnormal";
+
+            statusElement.className =
+                "value abnormal";
+
+        }
+
+        else{
+
+            predictionElement.innerText =
+                "No Disease Detected";
+
+            predictionElement.className =
+                "value normal";
+
+            statusElement.className =
+                "value normal";
+
+        }
+
+
+    }
+
+    catch(error){
+
+
+        console.error(
+            "Heart Disease Error:",
+            error
+        );
+
+
+        errorElement.innerText =
+            "Error: "
+            +
+            error.message;
+
+    }
+
+}
+
+
+
+/* ==================================================
+   ECG ARRHYTHMIA CHART
+================================================== */
+
+
+const ecgCtx =
+    document
+    .getElementById("ecgChart")
+    .getContext("2d");
+
+
+const ecgChart =
+    new Chart(
+        ecgCtx,
+        {
+
+            type:"line",
+
+            data:{
+
+                labels:[],
+
+                datasets:[{
+
+                    label:
+                        "ECG Signal",
+
+                    data:[],
+
+                    borderColor:
+                        "#00e5ff",
+
+                    borderWidth:
+                        2,
+
+                    pointRadius:
+                        0,
+
+                    fill:
+                        false,
+
+                    tension:
+                        0.15
+
+                }]
+
+            },
+
+
+            options:{
+
+                responsive:true,
+
+                animation:false,
+
+                plugins:{
+
+                    legend:{
+
+                        labels:{
+
+                            color:"black"
+
+                        }
+
+                    }
+
+                },
+
+
+                scales:{
+
+                    x:{
+
+                        title:{
+
+                            display:true,
+
+                            text:"ECG Samples"
+
+                        },
+
+                        ticks:{
+
+                            display:false
+
+                        }
+
+                    },
+
+
+                    y:{
+
+                        title:{
+
+                            display:true,
+
+                            text:"Amplitude"
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+    );
+
+
+
+/* ==================================================
+   ECG ARRHYTHMIA CNN API
+================================================== */
+
+
+async function updateArrhythmia(){
+
+
+    try{
+
+
+        const response =
+            await fetch(
+                "/api/arrhythmia/test"
+            );
+
+
+        if(!response.ok){
+
+            throw new Error(
+                "Arrhythmia API failed"
+            );
+
+        }
+
+
+        const result =
+            await response.json();
+
+
+        console.log(
+            "Arrhythmia Result:",
+            result
+        );
+
+
+
+        const rhythmElement =
+            document.getElementById(
+                "ecgRhythm"
+            );
+
+
+        /*
+        API may return class_name,
+        rhythm or status depending on app.py.
+        */
+
+        const rhythmName =
+            result.class_name ||
+            result.rhythm ||
+            result.status ||
+            result.class_code ||
+            "--";
+
+
+        rhythmElement.innerText =
+            rhythmName;
+
+
+
+        document
+            .getElementById(
+                "arrhythmiaClass"
+            )
+            .innerText =
+            result.class_code || "--";
+
+
+
+        let confidence =
+            Number(
+                result.confidence || 0
+            );
+
+
+        document
+            .getElementById(
+                "arrhythmiaConfidence"
+            )
+            .innerText =
+
+            confidence.toFixed(2)
+            +
+            "%";
+
+
+
+        const alertElement =
+            document.getElementById(
+                "ecgAlert"
+            );
+
+
+        const classElement =
+            document.getElementById(
+                "arrhythmiaClass"
+            );
+
+
+        if(
+            result.class_code === "N"
+        ){
+
+
+            rhythmElement.className =
+                "value normal";
+
+
+            classElement.className =
+                "value normal";
+
+
+            alertElement.className =
+                "ecg-alert ecg-normal-alert";
+
+
+            alertElement.innerText =
+                "✓ Normal ECG Rhythm Detected";
+
+
+        }
+
+        else{
+
+
+            rhythmElement.className =
+                "value abnormal";
+
+
+            classElement.className =
+                "value abnormal";
+
+
+            alertElement.className =
+                "ecg-alert ecg-danger-alert";
+
+
+            alertElement.innerText =
+                "⚠ Abnormal ECG Rhythm Detected: "
+                +
+                rhythmName;
+
+
+        }
+
+
+
+        /*
+        ECG array returned from Flask
+        */
+
+        if(
+            result.ecg &&
+            Array.isArray(result.ecg)
+        ){
+
+
+            ecgChart.data.labels =
+                result.ecg.map(
+                    (_,index)=>index
+                );
+
+
+            ecgChart
+                .data
+                .datasets[0]
+                .data =
+                result.ecg;
+
+
+            ecgChart.update();
+
+
+        }
+
+
+    }
+
+
+    catch(error){
+
+
+        console.error(
+            "Arrhythmia API Error:",
+            error
+        );
+
+
+        const alertElement =
+            document.getElementById(
+                "ecgAlert"
+            );
+
+
+        alertElement.className =
+            "ecg-alert ecg-danger-alert";
+
+
+        alertElement.innerText =
+            "Unable to retrieve ECG prediction";
+
+
+    }
+
+
+}
+
+
+
+/* ==================================================
+   LOAD ECG
+================================================== */
+
+
+updateArrhythmia();
+
 
 </script>
+
+
 </body>
 </html>
