@@ -62,7 +62,7 @@ threshold = model["threshold"]
 
 accuracy = model["accuracy"]
 
-<<<<<<< Updated upstream
+
 
 # ============================================================
 # LOAD CARDIAC RISK MODEL
@@ -196,9 +196,6 @@ except Exception as e:
 # DATABASE INIT
 # ============================================================
 
-=======
-# ---------------- DATABASE INIT ----------------
->>>>>>> Stashed changes
 def init_db():
 
     conn = sqlite3.connect(

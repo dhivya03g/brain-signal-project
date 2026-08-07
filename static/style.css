@@ -1,83 +1,718 @@
-body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(to right, #1e3c72, #2a5298);
-    color: white;
-    text-align: center;
+/* ============================================================
+   AI CARDIAC DIGITAL TWIN — METAVERSE HUD
+   Premium glassmorphic medical dashboard styling
+============================================================ */
+
+*{
+    box-sizing:border-box;
 }
 
-.container {
-    margin-top: 100px;
+html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    overflow:hidden;
+    font-family:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
 }
 
-.card {
-    background: rgba(255, 255, 255, 0.2);
-    padding: 20px;
-    margin: 20px auto;
-    width: 300px;
-    border-radius: 15px;
+#scene-container{
+    position:fixed;
+    inset:0;
+    z-index:1;
 }
 
-.eeg {
-    font-size: 40px;
-    font-weight: bold;
+#scene-container canvas{
+    display:block;
 }
 
-.status {
-    font-size: 20px;
+/* ============================================================
+   UI OVERLAY ROOT
+============================================================ */
+
+#ui{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    pointer-events:none;
 }
 
-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 16px;
-}
-.normal {
-    color: #00ff88;
+/* ============================================================
+   ANNOTATION LAYER (3D-projected hotspot markers)
+============================================================ */
+
+#annotationLayer{
+    position:fixed;
+    inset:0;
+    z-index:45;
+    pointer-events:none;
 }
 
-.abnormal {
-    color: #ff4d4d;
-    animation: blink 1s infinite;
+.anatomy-marker{
+    position:absolute;
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:rgba(0,18,28,.78);
+    border:2px solid #00e5ff;
+    color:#00e5ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+    pointer-events:auto;
+    box-shadow:0 0 14px rgba(0,229,255,.65);
+    transition:transform .2s ease, box-shadow .2s ease, opacity .3s ease, background .2s ease;
+    animation:markerPulse 2.2s ease-in-out infinite;
 }
 
-@keyframes blink {
-    50% { opacity: 0.4; }
-}
-.brain {
-    width: 120px;
-    height: 120px;
-    margin: 20px auto;
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
+.anatomy-marker.numbered{
+    width:32px;
+    height:32px;
+    font-size:13px;
 }
 
-.brain-normal {
-    background-color: #00ff88;
-    box-shadow: 0 0 20px #00ff88;
+.anatomy-marker:hover{
+    transform:scale(1.18);
+    box-shadow:0 0 24px rgba(0,229,255,.95);
 }
 
-.brain {
-    width: 120px;
-    height: 120px;
-    margin: 20px auto;
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
+.anatomy-marker.active{
+    background:#00e5ff;
+    color:#001018;
+    box-shadow:0 0 28px #00e5ff;
+    animation:none;
 }
 
-.brain-normal {
-    background-color: #00ff88;
-    box-shadow: 0 0 20px #00ff88;
+.anatomy-marker.dimmed{
+    opacity:.28;
 }
 
-.brain-alert {
-    background-color: #ff3333;
-    box-shadow: 0 0 25px #ff0000;
+@keyframes markerPulse{
+    0%,100%{ box-shadow:0 0 10px rgba(0,229,255,.55); }
+    50%{ box-shadow:0 0 20px rgba(0,229,255,.9); }
 }
 
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+/* ============================================================
+   TOP LEFT — CARDIAC DIGITAL TWIN PANEL
+============================================================ */
+
+#mainPanel{
+    position:fixed;
+    top:28px;
+    left:28px;
+    width:300px;
+    padding:20px 22px;
+    border-radius:18px;
+    border:1.5px solid rgba(0,229,255,.55);
+    background:rgba(0,10,16,.58);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 0 30px rgba(0,229,255,.15);
+    pointer-events:auto;
+    z-index:60;
+}
+
+.panelHeader{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.panelIcon{
+    font-size:22px;
+}
+
+#mainPanel h1{
+    margin:0;
+    font-size:16.5px;
+    color:#00e5ff;
+    font-weight:700;
+    letter-spacing:.2px;
+}
+
+.panelDivider{
+    height:1px;
+    margin:14px 0;
+    background:linear-gradient(90deg, transparent, rgba(0,229,255,.5), transparent);
+}
+
+.metricRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.metricLabel{
+    color:#8fd8f5;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    font-weight:600;
+}
+
+#ecgSparkline{
+    display:block;
+}
+
+#bpm{
+    margin-top:6px;
+    font-size:34px;
+    font-weight:800;
+    color:#ffffff;
+    line-height:1;
+}
+
+#bpm .unit{
+    font-size:14px;
+    color:#00e5ff;
+    font-weight:700;
+    margin-left:5px;
+}
+
+#heartStatus{
+    margin-top:6px;
+    font-size:16px;
+    font-weight:700;
+    color:#00ff88;
+}
+
+#viewBadge{
+    margin-top:14px;
+    display:inline-block;
+    padding:5px 14px;
+    border-radius:20px;
+    border:1px solid rgba(0,229,255,.6);
+    background:rgba(0,229,255,.12);
+    color:#00e5ff;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+}
+
+/* ============================================================
+   LEFT — PATIENT CARDS
+============================================================ */
+
+#patientCards{
+    position:fixed;
+    top:196px;
+    left:28px;
+    width:210px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    pointer-events:auto;
+    z-index:58;
+}
+
+.patientCard{
+    padding:12px;
+    border-radius:16px;
+    border:1.5px solid rgba(0,229,255,.5);
+    background:rgba(0,10,16,.5);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    cursor:pointer;
+    text-align:center;
+    transition:border-color .25s ease, box-shadow .25s ease, background .25s ease, transform .2s ease;
+}
+
+.patientCard img{
+    width:100%;
+    max-height:100px;
+    object-fit:contain;
+    border-radius:10px;
+    margin-bottom:6px;
+}
+
+.patientCard p{
+    margin:0;
+    color:#ffffff;
+    font-size:13.5px;
+    font-weight:700;
+    letter-spacing:.2px;
+}
+
+.patientCard:hover{
+    border-color:#00e5ff;
+    box-shadow:0 0 22px rgba(0,229,255,.35);
+    transform:translateY(-2px);
+}
+
+.patientCard.active{
+    border-color:#00ff88;
+    box-shadow:0 0 26px rgba(0,255,136,.55);
+    background:rgba(0,255,136,.08);
+}
+
+/* ============================================================
+   TOP RIGHT — HOME / SURGICAL VIEW
+============================================================ */
+
+#topButtons{
+    position:fixed;
+    top:28px;
+    right:28px;
+    display:flex;
+    gap:14px;
+    pointer-events:auto;
+    z-index:62;
+}
+
+#topButtons button{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:13px 20px;
+    border-radius:14px;
+    border:1.5px solid rgba(0,229,255,.55);
+    background:rgba(0,10,16,.58);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    color:#ffffff;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+#surgeryBtnTop{
+    justify-content:space-between;
+    min-width:190px;
+}
+
+#surgeryBtnTop > span:first-child{
+    display:flex;
+    align-items:center;
+    gap:9px;
+}
+
+.btnIcon{
+    font-size:16px;
+}
+
+#arrow{
+    color:#00e5ff;
+    font-size:11px;
+    margin-left:10px;
+    transition:transform .25s ease;
+}
+
+#topButtons button:hover{
+    border-color:#00e5ff;
+    background:rgba(0,229,255,.14);
+    box-shadow:0 0 22px rgba(0,229,255,.3);
+}
+
+/* ============================================================
+   SURGICAL VIEW DROPDOWN
+============================================================ */
+
+#surgeryMenu{
+    position:fixed;
+    top:88px;
+    right:28px;
+    width:230px;
+    display:flex;
+    flex-direction:column;
+    background:rgba(0,10,16,.8);
+    border:1.5px solid rgba(0,229,255,.55);
+    border-radius:16px;
+    overflow:hidden;
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 0 30px rgba(0,229,255,.2);
+    z-index:61;
+
+    max-height:0;
+    opacity:0;
+    transform:translateY(-8px);
+    pointer-events:none;
+    transition:max-height .32s ease, opacity .25s ease, transform .25s ease;
+}
+
+#surgeryMenu.open{
+    max-height:300px;
+    opacity:1;
+    transform:translateY(0);
+    pointer-events:auto;
+}
+
+.surgeryOptionBtn{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:14px 18px;
+    border:none;
+    border-top:1px solid rgba(255,255,255,.1);
+    background:transparent;
+    color:#ffffff;
+    font-size:14px;
+    font-weight:600;
+    text-align:left;
+    cursor:pointer;
+    transition:background .2s ease, color .2s ease;
+}
+
+.surgeryOptionBtn:first-child{
+    border-top:none;
+}
+
+.surgeryOptionBtn:hover{
+    background:rgba(0,229,255,.14);
+}
+
+.surgeryOptionBtn.active{
+    background:rgba(0,216,255,.22);
+    color:#00e5ff;
+    box-shadow:inset 3px 0 0 #00e5ff;
+}
+
+/* ============================================================
+   MIDDLE RIGHT — HUD STATUS WIDGETS
+============================================================ */
+
+#sideWidgets{
+    position:fixed;
+    top:330px;
+    right:28px;
+    display:flex;
+    gap:14px;
+    pointer-events:auto;
+    z-index:57;
+}
+
+.hudWidget{
+    width:108px;
+    padding:14px 10px;
+    border-radius:14px;
+    border:1.5px solid rgba(0,229,255,.4);
+    background:rgba(0,10,16,.5);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    text-align:center;
+}
+
+.hudWidgetIcon{
+    font-size:19px;
+    margin-bottom:6px;
+}
+
+.pulseIcon{
+    color:#00e5ff;
+    animation:pulseIconAnim 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseIconAnim{
+    0%,100%{ opacity:.55; transform:scale(1); }
+    50%{ opacity:1; transform:scale(1.12); }
+}
+
+.hudWidgetLabel{
+    font-size:9px;
+    color:#7fd6ff;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    margin-bottom:4px;
+}
+
+.hudWidgetValue{
+    font-size:11.5px;
+    font-weight:800;
+    color:#ffffff;
+}
+
+.hudWidgetValue.good{
+    color:#00ff88;
+}
+
+/* ============================================================
+   BOTTOM RIGHT — HEART INFORMATION / ANATOMY INSPECTOR
+============================================================ */
+
+#infoCard{
+    position:fixed;
+    bottom:104px;
+    right:28px;
+    width:400px;
+    max-height:46vh;
+    overflow-y:auto;
+    padding:22px 24px;
+    border-radius:20px;
+    border:1.5px solid rgba(0,229,255,.55);
+    background:rgba(0,8,14,.74);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 0 36px rgba(0,229,255,.22);
+    pointer-events:auto;
+    z-index:59;
+}
+
+#infoCard::-webkit-scrollbar{
+    width:6px;
+}
+
+#infoCard::-webkit-scrollbar-thumb{
+    background:rgba(0,229,255,.5);
+    border-radius:3px;
+}
+
+#infoCardHeader{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+    padding-bottom:12px;
+    border-bottom:1px solid rgba(255,255,255,.12);
+}
+
+#infoCard h2{
+    margin:0;
+    font-size:17px;
+    color:#00e5ff;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-weight:700;
+}
+
+#closeAnatomyPanel{
+    cursor:pointer;
+    font-size:22px;
+    line-height:1;
+    color:#00e5ff;
+    padding:0 6px;
+    transition:color .2s ease, transform .2s ease;
+}
+
+#closeAnatomyPanel:hover{
+    color:#ff4d4d;
+    transform:scale(1.2);
+}
+
+.infoRow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.infoRow:last-child{
+    border-bottom:none;
+}
+
+.infoRowIcon{
+    font-size:16px;
+    width:22px;
+    text-align:center;
+    flex-shrink:0;
+}
+
+.infoRowLabel{
+    flex:1;
+    color:#a8e8ff;
+    font-size:13px;
+}
+
+.infoRowValue{
+    color:#ffffff;
+    font-size:13px;
+    font-weight:700;
+    text-align:right;
+}
+
+.infoRowValue.good{
+    color:#00ff88;
+}
+
+.detailRow{
+    padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.detailRow:last-child{
+    border-bottom:none;
+}
+
+.detailLabel{
+    color:#00d8ff;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    font-weight:700;
+    margin-bottom:4px;
+}
+
+.detailValue{
+    color:#e8feff;
+    font-size:13.5px;
+    line-height:1.5;
+}
+
+.anatomyIllustration{
+    width:60px;
+    height:60px;
+    margin:0 auto 16px;
+    border-radius:50%;
+    border:2px solid #00e5ff;
+    background:rgba(0,229,255,.08);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+    box-shadow:0 0 22px rgba(0,229,255,.35);
+}
+
+/* ============================================================
+   BOTTOM STAT BAR
+============================================================ */
+
+#bottomStatBar{
+    position:fixed;
+    bottom:20px;
+    left:28px;
+    right:28px;
+    display:flex;
+    gap:14px;
+    pointer-events:auto;
+    z-index:56;
+}
+
+.statPill{
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px 16px;
+    border-radius:14px;
+    border:1.5px solid rgba(0,229,255,.4);
+    background:rgba(0,10,16,.55);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    min-width:0;
+}
+
+.statPillIcon{
+    font-size:18px;
+    flex-shrink:0;
+}
+
+.statPillLabel{
+    font-size:9px;
+    color:#7fd6ff;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    margin-bottom:2px;
+    white-space:nowrap;
+}
+
+.statPillValue{
+    font-size:13px;
+    font-weight:800;
+    color:#ffffff;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.statPillValue.good{
+    color:#00ff88;
+}
+
+/* ============================================================
+   MODEL LOADING OVERLAY
+============================================================ */
+
+#modelLoader{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.78);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:500;
+}
+
+.loaderBox{
+    width:320px;
+    padding:30px;
+    border-radius:18px;
+    border:2px solid #00e5ff;
+    background:rgba(0,10,14,.88);
+    text-align:center;
+    box-shadow:0 0 40px rgba(0,229,255,.35);
+}
+
+.spinner{
+    width:48px;
+    height:48px;
+    margin:0 auto 18px;
+    border-radius:50%;
+    border:4px solid rgba(0,229,255,.2);
+    border-top-color:#00e5ff;
+    animation:spin .9s linear infinite;
+}
+
+@keyframes spin{
+    to{ transform:rotate(360deg); }
+}
+
+#loaderText{
+    font-size:15px;
+    font-weight:600;
+    color:#e8feff;
+    margin-bottom:16px;
+}
+
+.progressTrack{
+    width:100%;
+    height:8px;
+    border-radius:6px;
+    background:rgba(255,255,255,.12);
+    overflow:hidden;
+}
+
+#progressFill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#00e5ff,#00ff88);
+    transition:width .15s ease-out;
+}
+
+#progressPercent{
+    margin-top:10px;
+    font-size:13px;
+    color:#00e5ff;
+    font-weight:700;
+}
+
+/* ============================================================
+   RESPONSIVE ADJUSTMENTS
+============================================================ */
+
+@media (max-width:1100px){
+
+    #mainPanel{ width:260px; }
+    #patientCards{ width:180px; }
+    #infoCard{ width:340px; }
+    .hudWidget{ width:92px; }
+
+}
+
+@media (max-height:760px){
+
+    #patientCards{ top:184px; gap:10px; }
+    .patientCard{ padding:8px; }
+    .patientCard img{ max-height:70px; }
+    #sideWidgets{ top:300px; }
+    #infoCard{ bottom:96px; max-height:42vh; }
+
 }

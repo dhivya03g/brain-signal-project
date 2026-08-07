@@ -1,953 +1,1817 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>Advanced Cardiac Digital Twin</title>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>AI Cardiac Digital Twin</title>
+
+<link rel="stylesheet"
+href="/static/style.css">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-<style>
-body{
-margin:0;
-overflow:hidden;
-background: radial-gradient(circle at center,#020b14,#000000);
-font-family:Segoe UI;
-color:white;
-}
+<!-- Postprocessing (for the soft hologram bloom / glow) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
-#ui{
-position:absolute;
-width:100%;
-height:100%;
-pointer-events:none;
-z-index:5;
-}
-
-.card{
-position:absolute;
-background:rgba(0,0,0,0.6);
-backdrop-filter:blur(10px);
-border-radius:20px;
-padding:15px;
-pointer-events:auto;
-text-align:center;
-}
-
-
-
-/* ================= MAIN CARD ================= */
-
-#main{
-    position:absolute;
-    top:20px;
-    left:50%;
-    transform:translateX(-50%);
-    width:360px;
-    text-align:center;
-    z-index:100;
-}
-
-/* ================= PATIENT CARDS ================= */
-
-.patient{
-    position:absolute;
-    width:150px;
-    padding:12px;
-    cursor:pointer;
-    transition:0.3s;
-}
-
-.patient:hover{
-    transform:scale(1.08);
-    box-shadow:0 0 20px cyan;
-}
-
-.patient img{
-    width:110px;
-    height:110px;
-    border-radius:50%;
-    border:3px solid #00f0ff;
-    object-fit:cover;
-}
-
-/* ================= PATIENT POSITIONS ================= */
-
-#male{
-    left:30px;
-    top:180px;
-}
-
-#female{
-    left:30px;
-    bottom:120px;
-}
-
-#child{
-    right:30px;
-    top:220px;
-}
-
-/* ================= BUTTONS ================= */
-
-button{
-    margin:8px;
-    padding:10px 18px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-    font-size:15px;
-    font-weight:bold;
-    background:#00e5ff;
-    color:#000;
-    transition:.3s;
-}
-
-button:hover{
-    background:#00ffff;
-    transform:scale(1.05);
-    box-shadow:0 0 15px #00ffff;
-}
-
-/* ================= SURGICAL LABELS ================= */
-
-#leftLabel,
-#rightLabel{
-    position:absolute;
-    top:12%;
-    font-size:24px;
-    font-weight:bold;
-    color:#00e5ff;
-    display:none;
-    text-shadow:0 0 10px cyan;
-    z-index:100;
-}
-
-#leftLabel{
-    left:18%;
-}
-
-#rightLabel{
-    right:18%;
-}
-
-/* ================= DISEASE CARD ================= */
-
-#diseaseCard{
-    position:absolute;
-    bottom:20px;
-    left:50%;
-    transform:translateX(-50%);
-    width:650px;
-    background:rgba(0,0,0,.65);
-    backdrop-filter:blur(12px);
-    border-radius:18px;
-    padding:20px;
-    color:white;
-    display:none;
-    text-align:left;
-    z-index:100;
-    border:2px solid rgba(0,229,255,.4);
-    box-shadow:0 0 25px rgba(0,229,255,.3);
-}
-
-#diseaseCard h2{
-    color:#00ffff;
-    margin-top:0;
-}
-
-#diseaseCard p{
-    margin:8px 0;
-    line-height:1.6;
-}
-
-/* ================= ANATOMICAL MARKERS ================= */
-
-.anatomy-marker{
-    position:absolute;
-    width:34px;
-    height:34px;
-    border-radius:50%;
-    background:rgba(15,20,35,0.92);
-    border:2px solid white;
-    color:white;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:15px;
-    font-weight:bold;
-    cursor:pointer;
-    pointer-events:auto;
-    z-index:200;
-    transform:translate(-50%,-50%);
-    box-shadow:0 0 8px rgba(255,255,255,.8);
-    transition:0.2s;
-}
-
-.anatomy-marker:hover{
-    background:#00e5ff;
-    color:black;
-    transform:translate(-50%,-50%) scale(1.2);
-}
-
-.anatomy-marker.affected{
-    background:#ff2020;
-    border-color:white;
-    box-shadow:0 0 10px red, 0 0 25px red;
-}
-
-</style>
 </head>
-
 <body>
 
-    <div id="annotationLayer"></div>
+<div id="scene-container"></div>
 
-    <div id="ui">
+<!-- Screen-space anatomy hotspot markers (projected from 3D each frame) -->
+<div id="annotationLayer"></div>
 
-    <div id="main" class="card">
-        <h2>🫀 Cardiac Digital Twin</h2>
-
-        <div id="bpm">-- BPM</div>
-        <div id="status">Loading...</div>
-
-        <button id="surgeryBtn" onclick="toggleSurgery()">
-            Surgical View
-        </button>
-        
-        <div id="surgeryControls" style="display:none;">
-            
-            <h3>Surgical View</h3>
-            
-            <button onclick="showExterior()">
-                Exterior Heart
-            </button>
-            
-            <button onclick="showInterior()">
-                Interior Heart
-            </button>
-            
-            <button onclick="closeSurgery()">
-                Back
-            </button>
-        
+<!-- Model loading overlay (exterior/interior GLBs are 100MB+) -->
+<div id="modelLoader">
+    <div class="loaderBox">
+        <div class="spinner"></div>
+        <div id="loaderText">Loading Heart Model&hellip;</div>
+        <div class="progressTrack">
+            <div id="progressFill"></div>
         </div>
-        
+        <div id="progressPercent">0%</div>
     </div>
-    <div id="leftLabel">Exterior Heart</div>
-
-    <div id="rightLabel">Interior Heart</div>
-
-    <div id="male" class="card patient">
-        <img src="/static/images/male.png">
-        <div>Adult Male</div>
-    </div>
-
-    <div id="female" class="card patient">
-        <img src="/static/images/female.png">
-        <div>Adult Female</div>
-    </div>
-
-    <div id="child" class="card patient">
-        <img src="/static/images/child.png">
-        <div>Child</div>
-    </div>
-
-    <div id="diseaseCard">
-
-    <h2 id="partTitle">
-        Anatomical Region
-    </h2>
-
-    <p>
-        <b>Heart Part :</b>
-        <span id="partName">--</span>
-    </p>
-
-    <p>
-        <b>Predicted Condition :</b>
-        <span id="diseaseName">--</span>
-    </p>
-
-    <p>
-        <b>Cause :</b>
-        <span id="causeText">--</span>
-    </p>
-
-    <p>
-        <b>Symptoms :</b>
-        <span id="symptomText">--</span>
-    </p>
-
-    <p>
-        <b>Recommendation :</b>
-        <span id="recommendationText">--</span>
-    </p>
-
 </div>
 
+<div id="ui">
+
+    <!-- TOP LEFT: Cardiac Digital Twin readout -->
+    <div id="mainPanel">
+
+        <div class="panelHeader">
+            <span class="panelIcon">🫀</span>
+            <h1>Cardiac Digital Twin</h1>
+        </div>
+
+        <div class="panelDivider"></div>
+
+        <div class="metricRow">
+            <div class="metricLabel">Heart Rate</div>
+            <canvas id="ecgSparkline" width="150" height="42"></canvas>
+        </div>
+        <div id="bpm">82 <span class="unit">BPM</span></div>
+
+        <div class="panelDivider"></div>
+
+        <div class="metricLabel">Status</div>
+        <div id="heartStatus">✔ Normal</div>
+
+        <div id="viewBadge">Overview</div>
+
+    </div>
+
+
+    <!-- LEFT PATIENTS -->
+
+    <div id="patientCards">
+
+        <div class="patientCard" id="maleCard">
+            <img src="/static/images/male.png">
+            <p>Adult Male</p>
+        </div>
+
+        <div class="patientCard" id="femaleCard">
+            <img src="/static/images/female.png">
+            <p>Adult Female</p>
+        </div>
+
+        <div class="patientCard" id="childCard">
+            <img src="/static/images/child.png">
+            <p>Child</p>
+        </div>
+
+    </div>
+
+
+    <!-- RIGHT TOP -->
+
+    <div id="topButtons">
+
+        <button id="homeBtn">
+            <span class="btnIcon">🏠</span> Home
+        </button>
+
+        <button id="surgeryBtnTop">
+
+            <span><span class="btnIcon">🩺</span> Surgical View</span>
+
+            <span id="arrow">▶</span>
+
+        </button>
+
+    </div>
+
+
+    <!-- RIGHT DROPDOWN -->
+
+    <div id="surgeryMenu">
+
+        <button id="showOverview" class="surgeryOptionBtn active">
+
+            <span class="btnIcon">🫀</span> Overview Heart
+
+        </button>
+
+        <button id="showExterior" class="surgeryOptionBtn">
+
+            <span class="btnIcon">❤️</span> Exterior Heart
+
+        </button>
+
+        <button id="showInterior" class="surgeryOptionBtn">
+
+            <span class="btnIcon">🫁</span> Interior Heart
+
+        </button>
+
+    </div>
+
+
+    <!-- MIDDLE RIGHT: HUD status widgets -->
+
+    <div id="sideWidgets">
+
+        <div class="hudWidget" id="syncWidget">
+            <div class="hudWidgetIcon">🫀</div>
+            <div class="hudWidgetLabel">SYNC STATUS</div>
+            <div class="hudWidgetValue good">OPTIMAL</div>
+        </div>
+
+        <div class="hudWidget" id="liveWidget">
+            <div class="hudWidgetIcon pulseIcon">(●)</div>
+            <div class="hudWidgetLabel">LIVE</div>
+            <div class="hudWidgetValue">MONITORING</div>
+        </div>
+
+    </div>
+
+
+    <!-- BOTTOM RIGHT: dynamic Heart Information / Anatomy Inspector -->
+
+    <div id="infoCard">
+
+        <div id="infoCardHeader">
+            <h2><span id="infoCardIcon">❤️</span> <span id="infoCardTitle">Heart Information</span></h2>
+            <span id="closeAnatomyPanel" title="Back to vitals">&times;</span>
+        </div>
+
+        <div id="infoCardBody">
+            <!-- populated dynamically by JS: vitals mode or anatomy-detail mode -->
+        </div>
+
+    </div>
+
+
+    <!-- BOTTOM STAT BAR -->
+
+    <div id="bottomStatBar">
+
+        <div class="statPill">
+            <span class="statPillIcon">🧠</span>
+            <div>
+                <div class="statPillLabel">AI PREDICTION</div>
+                <div class="statPillValue good" id="statPrediction">LOW RISK</div>
+            </div>
+        </div>
+
+        <div class="statPill">
+            <span class="statPillIcon">📈</span>
+            <div>
+                <div class="statPillLabel">CARDIAC OUTPUT</div>
+                <div class="statPillValue" id="statOutput">5.0 L/min</div>
+            </div>
+        </div>
+
+        <div class="statPill">
+            <span class="statPillIcon">🛡️</span>
+            <div>
+                <div class="statPillLabel">SYSTEM STATUS</div>
+                <div class="statPillValue good">STABLE</div>
+            </div>
+        </div>
+
+        <div class="statPill">
+            <span class="statPillIcon">🕒</span>
+            <div>
+                <div class="statPillLabel">LAST UPDATE</div>
+                <div class="statPillValue" id="statUpdate">Just now</div>
+            </div>
+        </div>
+
+        <div class="statPill">
+            <span class="statPillIcon">🔒</span>
+            <div>
+                <div class="statPillLabel">DATA ENCRYPTED</div>
+                <div class="statPillValue good">SECURE</div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
 <script>
 
-// ================= SCENE =================
+// ============================================================
+// ANATOMY / DISEASE KNOWLEDGE BASE
+// ============================================================
 
-const scene = new THREE.Scene();
+// Overview hotspot markers (heart.glb is a single fused mesh with
+// one material, so individual parts can't be raycast — real screen-
+// projected hotspots are used instead, anchored to points computed
+// from the model's actual bounding box).
+const OVERVIEW_ANATOMY = {
+    LA: {
+        title: "Left Atrium",
+        disease: "Atrial Fibrillation",
+        cause: "Disorganized electrical activity in the atrium, often linked to aging, hypertension, or valve disease.",
+        symptoms: "Palpitations, fatigue, shortness of breath, dizziness.",
+        recommendation: "ECG monitoring, rate/rhythm control, anticoagulation if indicated."
+    },
+    RA: {
+        title: "Right Atrium",
+        disease: "Tricuspid Regurgitation",
+        cause: "Valve degeneration or right-heart enlargement allowing backflow of blood.",
+        symptoms: "Fatigue, leg or abdominal swelling, irregular heartbeat.",
+        recommendation: "Echocardiogram evaluation; valve repair/replacement if severe."
+    },
+    LV: {
+        title: "Left Ventricle",
+        disease: "Left Ventricular Hypertrophy / Heart Failure",
+        cause: "Chronic high blood pressure, aortic valve disease, or a prior myocardial infarction.",
+        symptoms: "Breathlessness, chest discomfort, reduced exercise tolerance.",
+        recommendation: "Blood pressure control, echocardiogram, guideline-directed therapy."
+    },
+    RV: {
+        title: "Right Ventricle",
+        disease: "Right Ventricular Dysfunction / Pulmonary Hypertension",
+        cause: "Elevated pulmonary artery pressure from lung disease or pulmonary embolism.",
+        symptoms: "Fatigue, leg swelling, shortness of breath on exertion.",
+        recommendation: "Pulmonary function testing; right-heart catheterization if indicated."
+    },
+    AORTA: {
+        title: "Aorta / Great Vessels",
+        disease: "Aortic Aneurysm / Aortic Stenosis",
+        cause: "Atherosclerosis, chronic hypertension, bicuspid aortic valve.",
+        symptoms: "Often silent until advanced; chest/back pain, fainting.",
+        recommendation: "Regular imaging (CT/echo), blood pressure control."
+    },
+    APEX: {
+        title: "Apex of the Heart",
+        disease: "Apical Hypertrophic Cardiomyopathy",
+        cause: "Genetic hypertrophic remodeling, or scarring after a prior infarction.",
+        symptoms: "Chest pain, arrhythmia, exertional shortness of breath.",
+        recommendation: "Cardiac MRI, genetic counseling if HCM is suspected."
+    }
+};
 
-const camera = new THREE.PerspectiveCamera(
-60,
-window.innerWidth/window.innerHeight,
-0.1,
-1000
-);
-camera.position.set(0,0,5);
+// Exterior heart real segmented structures (verified against the
+// actual glTF material names baked into exteriorHeart.glb).
+const EXTERIOR_ANATOMY = {
+    "main_body2": {
+        title: "Myocardium (Heart Wall)",
+        disease: "Myocardial Infarction / Cardiomyopathy",
+        cause: "Coronary artery blockage cutting off blood supply, or chronic muscle weakening.",
+        symptoms: "Chest pain, shortness of breath, fatigue.",
+        recommendation: "Emergency evaluation for acute chest pain; ongoing medical management."
+    },
+    "right_coronary_artery_2": {
+        title: "Right Coronary Artery",
+        disease: "Right Coronary Artery Disease",
+        cause: "Atherosclerotic plaque restricting blood flow to the right ventricle.",
+        symptoms: "Angina, signs of inferior-wall heart attack, bradycardia.",
+        recommendation: "Coronary angiography; stenting or bypass depending on severity."
+    },
+    "middle_cardiac_vein": {
+        title: "Middle Cardiac Vein",
+        disease: "Cardiac Venous Congestion",
+        cause: "Impaired venous drainage, often secondary to right-sided heart failure.",
+        symptoms: "Usually silent; contributes to fluid build-up.",
+        recommendation: "Manage underlying heart failure and monitor fluid status."
+    }
+};
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth,window.innerHeight);
-renderer.localClippingEnabled = true;
+// Interior heart — the 13 clinically-canonical numbered hotspots
+// requested. Positions are computed at runtime from the model's
+// real bounding box (see INTERIOR_HOTSPOT_LAYOUT), not hardcoded
+// pixel guesses, so they scale correctly with the actual geometry.
+const INTERIOR_ANATOMY = [
+    { num: 1, key: "LA", title: "Left Atrium",
+      desc: "Upper-left chamber that receives oxygen-rich blood from the lungs via the pulmonary veins.",
+      func: "Collects oxygenated blood and pumps it through the mitral valve into the left ventricle.",
+      diseases: "Atrial Fibrillation, Left Atrial Enlargement",
+      causes: "Hypertension, mitral valve disease, aging-related fibrosis.",
+      symptoms: "Palpitations, fatigue, shortness of breath.",
+      riskFactors: "Age, high blood pressure, obesity, sleep apnea.",
+      recommendation: "ECG monitoring, blood pressure control, anticoagulation if fibrillation present.",
+      severity: "Moderate",
+      offset: {x:-0.55, y:0.55, z:-0.30} },
 
-// Keep the canvas behind the UI
-renderer.domElement.style.position = "absolute";
-renderer.domElement.style.top = "0";
-renderer.domElement.style.left = "0";
-renderer.domElement.style.zIndex = "0";
+    { num: 2, key: "RA", title: "Right Atrium",
+      desc: "Upper-right chamber that receives deoxygenated blood returning from the body.",
+      func: "Collects venous blood from the vena cavae and pumps it through the tricuspid valve.",
+      diseases: "Atrial Septal Defect, Tricuspid Regurgitation",
+      causes: "Congenital defect, right heart volume overload.",
+      symptoms: "Fatigue, leg swelling, irregular heartbeat.",
+      riskFactors: "Congenital heart disease, pulmonary hypertension.",
+      recommendation: "Echocardiogram evaluation, cardiology follow-up.",
+      severity: "Moderate",
+      offset: {x:0.55, y:0.50, z:0.15} },
 
-const canvas = renderer.domElement;
-document.body.insertBefore(canvas, document.getElementById("ui"));
+    { num: 3, key: "LV", title: "Left Ventricle",
+      desc: "Thick-walled main pumping chamber that sends oxygenated blood to the entire body.",
+      func: "Generates the pressure needed to circulate blood through the body via the aorta.",
+      diseases: "Left Ventricular Hypertrophy, Heart Failure, Myocardial Infarction",
+      causes: "Chronic hypertension, coronary artery disease, aortic valve disease.",
+      symptoms: "Breathlessness, chest discomfort, fatigue, fluid retention.",
+      riskFactors: "High blood pressure, diabetes, smoking, high cholesterol.",
+      recommendation: "Blood pressure control, echocardiogram, heart failure therapy.",
+      severity: "High",
+      offset: {x:-0.40, y:-0.50, z:0.35} },
 
-const controls = new THREE.OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true;
+    { num: 4, key: "RV", title: "Right Ventricle",
+      desc: "Chamber that pumps deoxygenated blood to the lungs for oxygenation.",
+      func: "Sends blood through the pulmonary valve and pulmonary artery to the lungs.",
+      diseases: "Right Ventricular Dysfunction, Pulmonary Hypertension",
+      causes: "Chronic lung disease, pulmonary embolism, elevated pulmonary pressure.",
+      symptoms: "Fatigue, leg swelling, exertional breathlessness.",
+      riskFactors: "COPD, history of pulmonary embolism, sleep apnea.",
+      recommendation: "Pulmonary function testing, right-heart catheterization if indicated.",
+      severity: "Moderate",
+      offset: {x:0.30, y:-0.55, z:0.40} },
 
-// ================= LIGHTING =================
+    { num: 5, key: "AORTA", title: "Aorta",
+      desc: "The largest artery, carrying oxygenated blood from the left ventricle to the body.",
+      func: "Distributes oxygen-rich blood to all systemic organs and tissues.",
+      diseases: "Aortic Aneurysm, Aortic Dissection, Atherosclerosis",
+      causes: "Chronic hypertension, atherosclerosis, connective tissue disorders.",
+      symptoms: "Often silent; severe chest/back pain if dissection occurs.",
+      riskFactors: "Hypertension, smoking, family history, bicuspid aortic valve.",
+      recommendation: "Regular imaging (CT/echo), blood pressure control.",
+      severity: "High",
+      offset: {x:-0.10, y:0.90, z:-0.15} },
 
-scene.add(new THREE.AmbientLight(0xffffff,0.6));
+    { num: 6, key: "PA", title: "Pulmonary Artery",
+      desc: "The vessel carrying deoxygenated blood from the right ventricle to the lungs.",
+      func: "Transports blood to the pulmonary circulation for gas exchange.",
+      diseases: "Pulmonary Hypertension, Pulmonary Embolism",
+      causes: "Chronic lung disease, blood clots, left heart disease.",
+      symptoms: "Shortness of breath, fatigue, chest pain.",
+      riskFactors: "Immobility, clotting disorders, chronic lung disease.",
+      recommendation: "CT pulmonary angiography if embolism suspected.",
+      severity: "High",
+      offset: {x:0.25, y:0.85, z:-0.35} },
 
-const redLight = new THREE.PointLight(0xff5555,3,50);
-redLight.position.set(3,3,5);
-scene.add(redLight);
+    { num: 7, key: "SVC", title: "Superior Vena Cava",
+      desc: "Large vein returning deoxygenated blood from the head, neck and upper body.",
+      func: "Channels systemic venous return from the upper body into the right atrium.",
+      diseases: "Superior Vena Cava Syndrome",
+      causes: "Compression from tumors, blood clots, or fibrosis.",
+      symptoms: "Facial/neck swelling, distended neck veins, breathlessness.",
+      riskFactors: "Lung cancer, mediastinal masses, indwelling catheters.",
+      recommendation: "Imaging to identify obstruction, treat underlying cause.",
+      severity: "Moderate",
+      offset: {x:0.50, y:0.90, z:0.05} },
 
-const blueLight = new THREE.PointLight(0x4444ff,2,50);
-blueLight.position.set(-3,-3,5);
-scene.add(blueLight);
+    { num: 8, key: "IVC", title: "Inferior Vena Cava",
+      desc: "Large vein returning deoxygenated blood from the lower body and abdomen.",
+      func: "Channels systemic venous return from the lower body into the right atrium.",
+      diseases: "IVC Thrombosis",
+      causes: "Deep vein thrombosis extension, compression, hypercoagulable states.",
+      symptoms: "Leg swelling, abdominal pain, risk of pulmonary embolism.",
+      riskFactors: "Prolonged immobility, clotting disorders, pregnancy.",
+      recommendation: "Doppler ultrasound, anticoagulation if thrombosis confirmed.",
+      severity: "Moderate",
+      offset: {x:0.45, y:-0.85, z:0.10} },
 
-// ================= HEART LOADING =================
+    { num: 9, key: "MV", title: "Mitral Valve",
+      desc: "The valve between the left atrium and left ventricle.",
+      func: "Ensures one-way blood flow from the left atrium into the left ventricle.",
+      diseases: "Mitral Regurgitation, Mitral Stenosis, Mitral Valve Prolapse",
+      causes: "Degenerative valve disease, rheumatic fever, prior endocarditis.",
+      symptoms: "Fatigue, breathlessness, heart murmur, palpitations.",
+      riskFactors: "Age, rheumatic heart disease history, connective tissue disorders.",
+      recommendation: "Echocardiogram; valve repair or replacement if severe.",
+      severity: "Moderate",
+      offset: {x:-0.25, y:0.05, z:0.25} },
 
-const loader = new THREE.GLTFLoader();
+    { num: 10, key: "TV", title: "Tricuspid Valve",
+      desc: "The valve between the right atrium and right ventricle.",
+      func: "Ensures one-way blood flow from the right atrium into the right ventricle.",
+      diseases: "Tricuspid Regurgitation, Tricuspid Stenosis",
+      causes: "Right heart enlargement, endocarditis, congenital defect.",
+      symptoms: "Leg/abdominal swelling, fatigue, distended neck veins.",
+      riskFactors: "Pulmonary hypertension, right heart failure, IV drug use.",
+      recommendation: "Echocardiogram; manage underlying right heart pressure.",
+      severity: "Moderate",
+      offset: {x:0.30, y:0.00, z:0.30} },
 
-let heart;
-let exteriorHeart;
-let interiorHeart;
+    { num: 11, key: "AV", title: "Aortic Valve",
+      desc: "The valve between the left ventricle and the aorta.",
+      func: "Opens to allow blood ejection into the aorta, closes to prevent backflow.",
+      diseases: "Aortic Stenosis, Aortic Regurgitation",
+      causes: "Calcific degeneration, bicuspid aortic valve, rheumatic disease.",
+      symptoms: "Chest pain, breathlessness, fainting on exertion.",
+      riskFactors: "Age, bicuspid valve, high cholesterol, hypertension.",
+      recommendation: "Echocardiogram; surgical or transcatheter valve replacement if severe.",
+      severity: "High",
+      offset: {x:-0.10, y:0.55, z:-0.05} },
 
-let pulseSpeed = 0.01;
-let baseScale = 1.2;
-let blockageRing;
-let heartMarkers = [];
-let selectedMarker = null;
-let activeAnnotations = [];
-let currentSurgicalHeart = null;
+    { num: 12, key: "PV", title: "Pulmonary Valve",
+      desc: "The valve between the right ventricle and the pulmonary artery.",
+      func: "Opens to allow blood flow to the lungs and prevents backflow.",
+      diseases: "Pulmonary Valve Stenosis, Pulmonary Regurgitation",
+      causes: "Congenital defect, carcinoid syndrome, prior surgical repair.",
+      symptoms: "Fatigue, breathlessness, right-sided heart strain.",
+      riskFactors: "Congenital heart disease, carcinoid tumors.",
+      recommendation: "Echocardiogram follow-up; valve intervention if significant.",
+      severity: "Moderate",
+      offset: {x:0.20, y:0.50, z:-0.20} },
 
-// Load heart model (place your realistic GLB here)
-loader.load("/static/heart.glb", function(gltf){
+    { num: 13, key: "IVS", title: "Interventricular Septum",
+      desc: "The muscular wall separating the left and right ventricles.",
+      func: "Maintains separation of oxygenated and deoxygenated blood and aids pump function.",
+      diseases: "Ventricular Septal Defect, Septal Hypertrophy",
+      causes: "Congenital defect, hypertrophic cardiomyopathy.",
+      symptoms: "Murmur, breathlessness, poor growth in congenital cases.",
+      riskFactors: "Family history of cardiomyopathy, congenital heart disease.",
+      recommendation: "Echocardiogram, genetic counseling if HCM suspected.",
+      severity: "Moderate to High",
+      offset: {x:0.00, y:-0.30, z:0.35} }
+];
 
-heart = gltf.scene;
-heart.scale.set(baseScale,baseScale,baseScale);
-heart.position.set(0,0,0);
+const SEVERITY_COLOR = {
+    "Low": "#00ff88",
+    "Moderate": "#ffcc00",
+    "Moderate to High": "#ff9900",
+    "High": "#ff4d4d"
+};
 
-heart.traverse(child=>{
-if(child.isMesh){
+// ============================================================
+// PATIENT PROFILES
+// (Heart Rate, Scale, Pump Speed, Glow, BP, Oxygen, Recommendation,
+// Status, Prediction — all update live without a page reload.)
+// ============================================================
 
-child.material.metalness = 0.3;
-child.material.roughness = 0.4;
+const PATIENT_PROFILES = {
+    male: {
+        label: "Adult Male",
+        bpm: 72, scale: 0.94, beatSpeed: 0.0035, beatStrength: 0.014,
+        glow: 0x00d8ff,
+        bp: "118 / 76 mmHg", oxygen: "98%",
+        recommendation: "Maintain healthy lifestyle",
+        status: "Normal", prediction: "LOW RISK",
+        strokeVolumeMl: 70
+    },
+    female: {
+        label: "Adult Female",
+        bpm: 78, scale: 0.84, beatSpeed: 0.0042, beatStrength: 0.013,
+        glow: 0x33e0ff,
+        bp: "112 / 72 mmHg", oxygen: "98%",
+        recommendation: "Maintain regular cardio exercise",
+        status: "Normal", prediction: "LOW RISK",
+        strokeVolumeMl: 65
+    },
+    child: {
+        label: "Child",
+        bpm: 95, scale: 0.65, beatSpeed: 0.0058, beatStrength: 0.011,
+        glow: 0x33ffcc,
+        bp: "100 / 64 mmHg", oxygen: "99%",
+        recommendation: "Routine pediatric checkups",
+        status: "Normal (Pediatric)", prediction: "LOW RISK",
+        strokeVolumeMl: 40
+    }
+};
 
-// Highlight valves if detected
-if(child.name.toLowerCase().includes("valve")){
-child.material.color.set(0xffcc00);
-child.material.emissive = new THREE.Color(0x553300);
+let currentPatient = PATIENT_PROFILES.male;
+
+// ============================================================
+// MODEL SOURCES / CONSTANTS
+// ============================================================
+
+const MODEL_SOURCES = {
+    overview: "/static/heart.glb",
+    exterior: "/static/exteriorHeart.glb",
+    interior: "/static/interiorHeart.glb"
+};
+
+const VIEW_LABELS = {
+    overview: "Overview",
+    exterior: "Exterior Heart",
+    interior: "Interior Heart"
+};
+
+const HEART_X = 0; // heart is perfectly centered on screen
+const RING_COUNT = 9;
+const PLATFORM_Y = -2.35;
+const DEFAULT_MIN_DISTANCE = 5;   // normal orbit floor
+const HOTSPOT_MIN_DISTANCE = 1.2; // relaxed floor while zoomed into a hotspot,
+                                   // so OrbitControls doesn't fight the zoom tween
+
+// ============================
+// HOME BUTTON
+// ============================
+
+document.getElementById("homeBtn").onclick = function(){
+    window.location.href = "/";
+};
+
+// ============================
+// CORE 3D STATE
+// ============================
+
+let scene, camera, renderer, controls, composer, bloomPass;
+let usingComposer = false;
+
+let heart = null;              // outer rig (always a THREE.Group, all views)
+let selectableModel = null;    // inner recentered gltf.scene — used for raycasting AND for
+                                // projecting hotspot anchors (all views, not just exterior)
+let activeView = null;
+let modelLoadToken = 0;     
+
+// incremented per loadModel() call; guards against a stale
+var ambientParticles = null;                   
+                                // GLTFLoader callback finishing after a newer load started
+const MODEL_TARGET_HEIGHT = 3.0; // shared normalized height for ALL three models, so Overview/
+                                  // Exterior/Interior render at the same real-world scale
+let currentScale = 0.94;
+let currentRotationSpeed = 0.003;
+let currentBeatSpeed = 0.0035;
+let currentBeatStrength = 0.014;
+let rotationEnabled = true;
+let pumpEnabled = true;
+
+let platformGroup;
+let overviewMarkerEls = [];
+let interiorMarkerEls = [];
+let highlightedMesh = null;
+let highlightedOriginalEmissive = null;
+let highlightedOriginalIntensity = 1;
+let selectedHotspotNum = null;
+let highlightSphere = null;
+let dimmedMaterials = [];      // stores {material, opacity, transparent} while dimmed
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+// Camera tween state
+let camTween = null; // {startPos, endPos, startTarget, endTarget, t0, duration}
+const DEFAULT_FRAMING = {
+    overview: { pos: new THREE.Vector3(0, 0.7, 6.6), target: new THREE.Vector3(0, 0.5, 0) },
+    exterior: { pos: new THREE.Vector3(0, 0.9, 6.4), target: new THREE.Vector3(0, 0.9, 0) },
+    interior: { pos: new THREE.Vector3(0, 0.9, 6.4), target: new THREE.Vector3(0, 0.9, 0) }
+};
+
+// If init() throws for any reason (CDN script failed to load, a bad model
+// path, a WebGL context failure, etc.) it must NOT take the rest of the
+// script down with it — the Surgical View dropdown, patient cards, and info
+// panel are wired up further below and must still work even if the 3D scene
+// itself failed. The error is also surfaced on-screen via the loader overlay
+// (instead of the heart silently never appearing) and logged with enough
+// detail to diagnose from the browser console.
+function init(){
+
+    // Scene
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
+
+    // Camera
+    camera = new THREE.PerspectiveCamera(
+        48,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+    );
+
+    camera.position.copy(DEFAULT_FRAMING.overview.pos);
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true
+    });
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    if(THREE.ACESFilmicToneMapping){
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+    }
+    if(THREE.sRGBEncoding){
+        renderer.outputEncoding = THREE.sRGBEncoding;
+    }
+
+    document.getElementById("scene-container").appendChild(renderer.domElement);
+
+    // Orbit Controls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.copy(DEFAULT_FRAMING.overview.target);
+    controls.update();
+    controls.minDistance = DEFAULT_MIN_DISTANCE;
+    controls.maxDistance = 13;
+    controls.enablePan = false;
+
+    // Lights
+    // Only a flat, non-directional AmbientLight remains — no SpotLight,
+    // DirectionalLight, PointLight, or HemisphereLight. Nothing shines
+    // "on" the heart from a direction, so there is no highlight/hotspot
+    // cast onto the model and it renders using its own embedded GLB
+    // materials (ambient is a uniform fill, not a directional light, so
+    // raising it doesn't add any directional brightening/glare effect).
+    const ambient = new THREE.AmbientLight(0xffffff, 1.6);
+    scene.add(ambient);
+
+    // Soft blue medical-HUD atmosphere: subtle fog + a faint drifting
+    // particle field, matching the reference's hazy hologram-bay look.
+    // Low density so it reads as depth/mood, not visible haze on the heart.
+    scene.fog = new THREE.FogExp2(0x00060c, 0.028);
+    buildAmbientParticles();
+
+    // Postprocessing (soft bloom for the hologram / glow look)
+    try {
+        if(THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass){
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+
+            bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.55,   // strength (softened)
+                0.4,    // radius (tighter, less spill onto the heart)
+                0.8     // threshold (raised so only bright additive elements like the hologram platform bloom, not the lit heart)
+            );
+            composer.addPass(bloomPass);
+            usingComposer = true;
+        }
+    } catch(e){
+        console.warn("Bloom postprocessing unavailable, falling back to standard render.", e);
+        usingComposer = false;
+    }
+
+    buildHologramPlatform();
+
+    // Load default (overview) heart
+    loadModel("overview", true);
+
+    window.addEventListener("resize", onResize);
+    renderer.domElement.addEventListener("click", onSceneClick);
+
 }
+
+// ============================================================
+// AMBIENT PARTICLE FIELD
+// (faint drifting cyan motes around the hologram bay — atmosphere only,
+// never blocks raycasting/clicks since it isn't part of selectableModel)
+// ============================================================
+
+function buildAmbientParticles(){
+
+    const COUNT = 260;
+    const positions = new Float32Array(COUNT * 3);
+
+    for(let i = 0; i < COUNT; i++){
+        // scattered in a wide, flattened volume around the platform/heart
+        const radius = 3.5 + Math.random() * 9;
+        const angle = Math.random() * Math.PI * 2;
+        positions[i * 3]     = Math.cos(angle) * radius;
+        positions[i * 3 + 1] = (Math.random() - 0.35) * 8;
+        positions[i * 3 + 2] = Math.sin(angle) * radius;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.PointsMaterial({
+        color: 0x00d8ff,
+        size: 0.045,
+        transparent: true,
+        opacity: 0.4,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+
+    ambientParticles = new THREE.Points(geometry, material);
+    scene.add(ambientParticles);
+
 }
-});
 
-scene.add(heart);
+function animateAmbientParticles(){
+    if(!ambientParticles) return;
+    // slow global drift/rotation — deliberately subtle
+    ambientParticles.rotation.y += 0.00025;
+    ambientParticles.position.y = Math.sin(Date.now() * 0.00012) * 0.15;
+}
 
-createBlockageRing();
+// ============================================================
+// HOLOGRAM PLATFORM
+// (many rings — outer rotate slowly, inner pulse — plus a soft glow
+// disc, centered under the heart; no beam/spotlight cone)
+// ============================================================
 
+function buildHologramPlatform(){
 
-});
+    platformGroup = new THREE.Group();
+    platformGroup.position.set(HEART_X, PLATFORM_Y, 0);
+    scene.add(platformGroup);
 
-// ================= LOAD EXTERIOR HEART =================
+    for(let i = 0; i < RING_COUNT; i++){
 
-loader.load(
-    "/static/exteriorHeart.glb",
+        const inner = 0.55 + i * 0.28;
+        const outer = 0.58 + i * 0.28;
 
-    function(gltf){
-        console.log("Exterior Heart Loaded");
-
-        exteriorHeart = gltf.scene;
-        exteriorHeart.scale.set(8,8,8);
-        exteriorHeart.position.set(-7,-3,0);
-        exteriorHeart.visible = false;
-
-        exteriorHeart.traverse((child) => {
-
-    if(child.isMesh){
-        console.log(
-            "HEART PART:",
-            child.name
+        const ring = new THREE.Mesh(
+            new THREE.RingGeometry(inner, outer, 80),
+            new THREE.MeshBasicMaterial({
+                color: 0x00d8ff,
+                transparent: true,
+                opacity: 0.42 - i * 0.035,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            })
         );
+
+        ring.rotation.x = -Math.PI / 2;
+
+        // inner 3 rings pulse, outer rings slowly spin
+        ring.userData.isInner = i < 3;
+        ring.userData.spinSpeed = 0.0006 + i * 0.00025;
+        ring.userData.baseOpacity = ring.material.opacity;
+        ring.userData.pulsePhase = i * 0.7;
+
+        platformGroup.add(ring);
+
     }
 
-});
+    // (spotlight/beam cone removed — platform keeps only its rings and glow disc)
 
-        scene.add(exteriorHeart);
-    },
+    // soft glowing disc under the rings
+    const glowDisc = new THREE.Mesh(
+        new THREE.CircleGeometry(2.9, 64),
+        new THREE.MeshBasicMaterial({
+            color: 0x00d8ff,
+            transparent: true,
+            opacity: 0.06,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+    );
+    glowDisc.rotation.x = -Math.PI / 2;
+    glowDisc.position.y = 0.01;
+    platformGroup.add(glowDisc);
 
-    undefined,
-
-    function(error){
-        console.error("Exterior Heart Error:", error);
-    }
-);
-
-// ================= LOAD INTERIOR HEART =================
-
-loader.load(
-    "/static/interiorHeart.glb",
-
-    function(gltf){
-        console.log("Interior Heart Loaded");
-
-        interiorHeart = gltf.scene;
-        interiorHeart.scale.set(8,8,8);
-        interiorHeart.position.set(-7,-3,0);
-        interiorHeart.visible = false;
-
-        scene.add(interiorHeart);
-    },
-
-    undefined,
-
-    function(error){
-        console.error("Interior Heart Error:", error);
-    }
-);
-
-
-
-// ================= BLOCKAGE DOTTED RING =================
-
-function createBlockageRing(){
-
-const geometry = new THREE.CircleGeometry(0.7, 64);
-
-
-const material = new THREE.LineDashedMaterial({
-color: 0xff0000,
-dashSize: 0.1,
-gapSize: 0.1
-});
-
-blockageRing = new THREE.LineLoop(geometry, material);
-blockageRing.computeLineDistances();
-blockageRing.rotation.x = Math.PI/2;
-blockageRing.position.set(0.3,0.2,0);
-blockageRing.visible = false;
-
-scene.add(blockageRing);
 }
 
-// ================= CLEAR ANATOMICAL NUMBERS =================
+function animatePlatform(){
 
-function updateAnnotations(){
+    if(!platformGroup) return;
 
-    activeAnnotations.forEach(item=>{
+    const t = Date.now() * 0.001;
 
-        const position = item.part.position.clone();
+    platformGroup.children.forEach(function(ring){
 
-        item.model.localToWorld(position);
-
-        position.project(camera);
-
-        const x =
-            (position.x * 0.5 + 0.5)
-            * window.innerWidth;
-
-        const y =
-            (-position.y * 0.5 + 0.5)
-            * window.innerHeight;
-            
-        item.element.style.left = x + "px";
-        item.element.style.top = y + "px";
+        if(ring.userData.isInner){
+            const pulse = 1 + Math.sin(t * 1.6 + ring.userData.pulsePhase) * 0.06;
+            ring.scale.set(pulse, pulse, pulse);
+            ring.material.opacity = ring.userData.baseOpacity +
+                Math.sin(t * 1.6 + ring.userData.pulsePhase) * 0.08;
+        } else if(ring.userData.spinSpeed){
+            ring.rotation.z += ring.userData.spinSpeed;
+        }
 
     });
 
 }
 
-const exteriorParts = [
+// ============================================================
+// ANIMATE LOOP
+// ============================================================
 
-    {
-        number: 1,
-        name: "Ascending Aorta",
-        nx: 0.50,
-        ny: 0.80,
-        nz: 0.55
-    },
+function animate(){
 
-    {
-        number: 2,
-        name: "Pulmonary Artery",
-        nx: 0.67,
-        ny: 0.70,
-        nz: 0.60
-    },
+    requestAnimationFrame(animate);
 
-    {
-        number: 3,
-        name: "Superior Vena Cava",
-        nx: 0.34,
-        ny: 0.72,
-        nz: 0.58
-    },
+    if(heart){
 
-    {
-        number: 4,
-        name: "Inferior Vena Cava",
-        nx: 0.35,
-        ny: 0.18,
-        nz: 0.58
-    },
+        if(rotationEnabled){
+            heart.rotation.y += currentRotationSpeed;
+        }
 
-    {
-        number: 5,
-        name: "Right Atrium",
-        nx: 0.34,
-        ny: 0.55,
-        nz: 0.68
-    },
+        if(pumpEnabled){
+            const pulse = currentScale +
+                Math.sin(Date.now() * currentBeatSpeed) * currentBeatStrength;
+            heart.scale.set(pulse, pulse, pulse);
+        } else {
+            heart.scale.set(currentScale, currentScale, currentScale);
+        }
 
-    {
-        number: 11,
-        name: "Left Coronary Artery",
-        nx: 0.68,
-        ny: 0.48,
-        nz: 0.72
-    },
-
-    {
-        number: 12,
-        name: "Left Anterior Descending Artery",
-        nx: 0.63,
-        ny: 0.38,
-        nz: 0.75
-    },
-
-    {
-        number: 13,
-        name: "Coronary Artery",
-        nx: 0.53,
-        ny: 0.58,
-        nz: 0.75
-    },
-
-    {
-        number: 14,
-        name: "Right Coronary Artery",
-        nx: 0.39,
-        ny: 0.47,
-        nz: 0.72
     }
 
+    animatePlatform();
+    animateAmbientParticles();
+
+    if(activeView === "overview"){
+        updateOverviewMarkers();
+    }
+    if(activeView === "interior"){
+        updateInteriorMarkers();
+    }
+
+    updateCameraTween();
+
+    controls.update();
+
+    if(usingComposer){
+        composer.render();
+    } else {
+        renderer.render(scene, camera);
+    }
+
+    updateSparkline();
+
+}
+
+function onResize(){
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    if(usingComposer){
+        composer.setSize(window.innerWidth, window.innerHeight);
+        if(bloomPass) bloomPass.setSize(window.innerWidth, window.innerHeight);
+    }
+
+}
+
+// ============================================================
+// CAMERA TWEEN (smooth easing — never teleports)
+// ============================================================
+
+function easeInOutCubic(t){
+    return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+}
+
+function tweenCamera(targetPos, targetLookAt, duration){
+
+    camTween = {
+        startPos: camera.position.clone(),
+        endPos: targetPos.clone(),
+        startTarget: controls.target.clone(),
+        endTarget: targetLookAt.clone(),
+        t0: performance.now(),
+        duration: duration || 1000
+    };
+
+    controls.enabled = false;
+
+}
+
+function updateCameraTween(){
+
+    if(!camTween) return;
+
+    const elapsed = performance.now() - camTween.t0;
+    let t = Math.min(elapsed / camTween.duration, 1);
+    const eased = easeInOutCubic(t);
+
+    camera.position.lerpVectors(camTween.startPos, camTween.endPos, eased);
+    controls.target.lerpVectors(camTween.startTarget, camTween.endTarget, eased);
+
+    if(t >= 1){
+        camTween = null;
+        controls.enabled = true;
+    }
+
+}
+
+// ============================================================
+// MODEL LOADING / SWAPPING (Overview <-> Exterior <-> Interior)
+// Only one GLB is ever in the scene; the previous one is fully
+// disposed (geometry + materials + textures) before the next loads.
+// ============================================================
+
+function disposeMaterial(material){
+    if(!material) return;
+    for(const key in material){
+        const value = material[key];
+        if(value && value.isTexture) value.dispose();
+    }
+    material.dispose();
+}
+
+function disposeObject(obj){
+    obj.traverse(function(child){
+        if(child.isMesh){
+            if(child.geometry) child.geometry.dispose();
+            if(Array.isArray(child.material)){
+                child.material.forEach(disposeMaterial);
+            } else {
+                disposeMaterial(child.material);
+            }
+        }
+    });
+}
+
+function clearHeart(){
+    if(heart){
+        scene.remove(heart);
+        disposeObject(heart);
+        heart = null;
+    }
+    selectableModel = null;
+    clearOverviewMarkers();
+    clearInteriorMarkers();
+    clearHighlight();
+    clearAnatomyDim();
+}
+
+function cloneMaterial(mat){
+    // Meshes can carry either a single material or an array of materials
+    // (multi-material mesh) — cloning without checking for the array case
+    // throws, silently aborting the traverse partway through the model.
+    return Array.isArray(mat) ? mat.map(function(m){ return m.clone(); }) : mat.clone();
+}
+
+// ============================================================
+// AUTO CAMERA FRAMING (Exterior / Interior)
+// Computes the camera target and distance directly from the model's
+// real, post-transform bounding box (world space, after centering and
+// normalization) so the heart sits exactly on-center on X/Y/Z and its
+// full extent fits inside the camera at roughly 45-50% of the viewport,
+// with no part clipped off screen — no hardcoded positions.
+// ============================================================
+
+function computeAutoFraming(loaded, rig){
+
+    rig.updateMatrixWorld(true);
+
+    const worldBox = new THREE.Box3().setFromObject(loaded);
+    const worldCenter = worldBox.getCenter(new THREE.Vector3());
+    const sphere = worldBox.getBoundingSphere(new THREE.Sphere());
+    const radius = sphere.radius;
+
+    const vFov = camera.fov * Math.PI / 180;
+
+    // Distance so the model's full diameter fills ~47.5% of the
+    // viewport height (comfortably inside the 45-50% target range).
+    const FILL_FRACTION = 0.475;
+    let distance = radius / (FILL_FRACTION * Math.tan(vFov / 2));
+
+    // Guard against a narrow/tall viewport clipping the sides: also make
+    // sure the diameter never exceeds 50% of the viewport width.
+    const aspect = camera.aspect || 1;
+    const minDistanceForWidth = radius / (0.5 * Math.tan(vFov / 2) * aspect);
+    distance = Math.max(distance, minDistanceForWidth);
+
+    // Small safety margin so nothing brushes the screen edges.
+    distance *= 1.08;
+
+    // Keep the result within the orbit controls' allowed zoom range.
+    distance = Math.min(Math.max(distance, DEFAULT_MIN_DISTANCE + 1), controls.maxDistance - 0.5);
+
+    const camPos = new THREE.Vector3(worldCenter.x, worldCenter.y, worldCenter.z + distance);
+
+    return { pos: camPos, target: worldCenter.clone() };
+
+}
+
+function loadModel(view, isInitial){
+
+    if(view === activeView && heart) return;
+
+    showLoader(view);
+
+    // Any GLTFLoader callback that resolves after a newer loadModel() call
+    // has started is stale and must be ignored (and disposed), otherwise a
+    // slow first load can finish after a fast second one and clobber it.
+    const token = ++modelLoadToken;
+
+    const loader = new THREE.GLTFLoader();
+
+    loader.load(
+
+        MODEL_SOURCES[view],
+
+        function(gltf){
+
+            if(token !== modelLoadToken){
+                // A newer view was requested while this one was still loading.
+                // Dispose it immediately instead of adding it to the scene.
+                disposeObject(gltf.scene);
+                return;
+            }
+
+            clearHeart();
+
+            const loaded = gltf.scene;
+
+            // Ensure materials can receive emissive highlight/dim edits later
+            loaded.traverse(function(child){
+                if(child.isMesh && child.material){
+                    child.material = cloneMaterial(child.material);
+                }
+            });
+
+            // Every view (Overview / Exterior / Interior) goes through the SAME
+            // centering + normalization pipeline, so all three heart models sit
+            // perfectly centered at the same real-world scale and face the
+            // camera identically — previously only Exterior/Interior did this,
+            // which is why Overview could render off-center depending on the
+            // raw GLB's authored pivot.
+            const box = new THREE.Box3().setFromObject(loaded);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            loaded.userData.rawCenter = center.clone();
+            loaded.userData.rawHalfSize = size.clone().multiplyScalar(0.5);
+
+            loaded.position.sub(center);
+
+            const norm = MODEL_TARGET_HEIGHT / (size.y || 1);
+            loaded.scale.setScalar(norm);
+
+            const rig = new THREE.Group();
+            rig.position.set(HEART_X, 0, 0);
+            rig.add(loaded);
+
+            heart = rig;
+            selectableModel = loaded; // used for raycasting AND hotspot anchor projection, all views
+
+            if(view === "overview"){
+                rotationEnabled = true;
+                pumpEnabled = true;
+            } else {
+                // Exterior / Interior: static medical visualization —
+                // no rotation, no pumping, just centered and facing the user.
+                rotationEnabled = false;
+                pumpEnabled = false;
+                heart.scale.set(currentScale, currentScale, currentScale);
+            }
+
+            heart.traverse(function(child){
+                if(child.isMesh && child.material){
+                    child.material.transparent = true;
+                    if(child.material.opacity === undefined) child.material.opacity = 1;
+                }
+            });
+
+            // fade the whole model in rather than popping it into view
+            heart.traverse(function(child){
+                if(child.isMesh && child.material) child.material.opacity = 0;
+            });
+            scene.add(heart);
+            fadeInModel(heart);
+            applyGlow(currentPatient.glow); // re-apply current patient's glow to the freshly loaded model
+
+            activeView = view;
+
+            if(view === "overview"){
+                buildOverviewMarkers();
+            } else if(view === "interior"){
+                buildInteriorMarkers(loaded);
+            }
+
+            hideAnatomyDetail();
+            updateSurgeryMenuActiveState(view);
+            updateViewBadge(view);
+            hideLoader();
+
+            // Exterior / Interior: derive the camera target and distance
+            // straight from this model's real (post-center, post-scale)
+            // bounding box instead of a fixed guess, so the heart is
+            // always perfectly centered and fully visible regardless of
+            // how each GLB's own geometry is authored.
+            if(view === "exterior" || view === "interior"){
+                const auto = computeAutoFraming(loaded, heart);
+                DEFAULT_FRAMING[view].pos.copy(auto.pos);
+                DEFAULT_FRAMING[view].target.copy(auto.target);
+            }
+
+            const framing = DEFAULT_FRAMING[view];
+            tweenCamera(framing.pos, framing.target, isInitial ? 1 : 1100);
+
+            console.log(view + " model loaded");
+
+        },
+
+        function(xhr){
+            if(token === modelLoadToken) updateLoaderProgress(xhr);
+        },
+
+        function(error){
+            if(token !== modelLoadToken) return;
+            console.error("Model load error:", error);
+            hideLoader(true);
+        }
+
+    );
+
+}
+
+function fadeInModel(obj){
+
+    const t0 = performance.now();
+    const duration = 700;
+
+    function step(){
+        const t = Math.min((performance.now() - t0) / duration, 1);
+        obj.traverse(function(child){
+            if(child.isMesh && child.material){
+                child.material.opacity = t;
+            }
+        });
+        if(t < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+
+}
+
+// ============================================================
+// LOADING OVERLAY
+// ============================================================
+
+function showLoader(view){
+
+    const label = {
+        overview: "Overview Heart",
+        exterior: "Exterior Heart (High-Resolution)",
+        interior: "Interior Heart (High-Resolution)"
+    }[view];
+
+    document.getElementById("loaderText").textContent = "Loading " + label + "\u2026";
+    document.getElementById("progressFill").style.width = "0%";
+    document.getElementById("progressPercent").textContent = "0%";
+    document.getElementById("modelLoader").style.display = "flex";
+
+}
+
+function updateLoaderProgress(xhr){
+    if(xhr.lengthComputable){
+        const pct = Math.round((xhr.loaded / xhr.total) * 100);
+        document.getElementById("progressFill").style.width = pct + "%";
+        document.getElementById("progressPercent").textContent = pct + "%";
+    }
+}
+
+function hideLoader(isError){
+
+    const overlay = document.getElementById("modelLoader");
+
+    if(isError){
+        document.getElementById("loaderText").textContent = "Failed to load model. Please try again.";
+        setTimeout(function(){ overlay.style.display = "none"; }, 2000);
+    } else {
+        overlay.style.display = "none";
+    }
+
+}
+
+// ============================================================
+// OVERVIEW HOTSPOT MARKERS (screen-projected, follow rotation/pulse)
+// Anchor points computed from heart.glb's real accessor bounding box
+// (min [-1.158,-1.590,-0.796] / max [1.013,1.621,0.968]).
+// ============================================================
+
+const OVERVIEW_MARKER_POINTS = [
+    { key: "LA",    label: "LA", pos: new THREE.Vector3(-0.615,  0.979, -0.161) },
+    { key: "RA",    label: "RA", pos: new THREE.Vector3( 0.471,  0.899,  0.174) },
+    { key: "LV",    label: "LV", pos: new THREE.Vector3(-0.452, -0.466,  0.395) },
+    { key: "RV",    label: "RV", pos: new THREE.Vector3( 0.253, -0.546,  0.439) },
+    { key: "AORTA", label: "Ao", pos: new THREE.Vector3(-0.126,  1.380, -0.002) },
+    { key: "APEX",  label: "Ax", pos: new THREE.Vector3(-0.181, -1.429,  0.130) }
 ];
 
-function createAnnotations(parts, model){
+function buildOverviewMarkers(){
 
-    clearAnnotations();
+    clearOverviewMarkers();
 
     const layer = document.getElementById("annotationLayer");
 
-    parts.forEach(part => {
+    OVERVIEW_MARKER_POINTS.forEach(function(marker){
 
-        const marker = document.createElement("div");
+        const el = document.createElement("div");
+        el.className = "anatomy-marker";
+        el.textContent = marker.label;
+        el.title = OVERVIEW_ANATOMY[marker.key].title;
 
-        marker.className = "anatomy-marker";
-        marker.innerText = part.number;
-
-        marker.onclick = function(){
-            selectHeartPart(part, model, marker);
+        el.onclick = function(){
+            document.querySelectorAll(".anatomy-marker").forEach(function(m){ m.classList.remove("active"); });
+            el.classList.add("active");
+            showAnatomyDetail(OVERVIEW_ANATOMY[marker.key], null);
         };
 
-        layer.appendChild(marker);
+        layer.appendChild(el);
+        overviewMarkerEls.push({ el: el, pos: marker.pos });
 
-        activeAnnotations.push({
-            part: part,
-            model: model,
-            element: marker
-        });
-    });
-}
-
-function clearAnnotations(){
-
-    activeAnnotations.forEach(item => {
-        item.element.remove();
     });
 
-    activeAnnotations = [];
 }
 
-function createExteriorAnnotations(){
-
-    if(!exteriorHeart) return;
-
-    calculatePartPositions(
-        exteriorParts,
-        exteriorHeart
-    );
-
-    createAnnotations(
-        exteriorParts,
-        exteriorHeart
-    );
+function clearOverviewMarkers(){
+    overviewMarkerEls.forEach(function(entry){ entry.el.remove(); });
+    overviewMarkerEls = [];
 }
 
-function calculatePartPositions(parts, model){
+function updateOverviewMarkers(){
 
-    const box = new THREE.Box3().setFromObject(model);
+    if(overviewMarkerEls.length === 0 || !selectableModel) return;
 
-    const min = box.min;
-    const max = box.max;
+    const w = window.innerWidth, h = window.innerHeight;
 
-    parts.forEach(part => {
+    overviewMarkerEls.forEach(function(entry){
 
-        const worldPosition = new THREE.Vector3(
-            THREE.MathUtils.lerp(min.x, max.x, part.nx),
-            THREE.MathUtils.lerp(min.y, max.y, part.ny),
-            THREE.MathUtils.lerp(min.z, max.z, part.nz)
+        const worldPos = entry.pos.clone();
+        selectableModel.localToWorld(worldPos);
+
+        const projected = worldPos.project(camera);
+        const behind = projected.z > 1;
+        const occluded = !behind && isMarkerOccluded(worldPos);
+
+        const x = (projected.x * 0.5 + 0.5) * w;
+        const y = (-projected.y * 0.5 + 0.5) * h;
+
+        entry.el.style.left = (x - 18) + "px";
+        entry.el.style.top = (y - 18) + "px";
+        entry.el.style.display = (behind || occluded) ? "none" : "flex";
+
+    });
+
+}
+
+// ============================================================
+// INTERIOR HEART — 13 NUMBERED CLINICAL HOTSPOTS
+// Anchors are computed from the model's REAL bounding box at load
+// time (loaded.userData.rawCenter / rawHalfSize), then projected
+// each frame via selectableModel.localToWorld(), so they stay
+// correctly attached to the model and always face the camera
+// (they're 2D DOM markers, so they inherently always face forward).
+// ============================================================
+
+function buildInteriorMarkers(loadedModel){
+
+    clearInteriorMarkers();
+
+    const layer = document.getElementById("annotationLayer");
+    const center = loadedModel.userData.rawCenter;
+    const half = loadedModel.userData.rawHalfSize;
+
+    INTERIOR_ANATOMY.forEach(function(item){
+
+        const anchor = new THREE.Vector3(
+            center.x + item.offset.x * half.x,
+            center.y + item.offset.y * half.y,
+            center.z + item.offset.z * half.z
         );
 
-        // Convert world coordinate back to model-local coordinate
-        part.position = model.worldToLocal(
-            worldPosition.clone()
-        );
+        const el = document.createElement("div");
+        el.className = "anatomy-marker numbered";
+        el.textContent = item.num;
+        el.title = item.title;
+
+        el.onclick = function(){
+            onInteriorHotspotClick(item, anchor, el);
+        };
+
+        layer.appendChild(el);
+        interiorMarkerEls.push({ el: el, anchor: anchor, item: item });
+
     });
+
 }
 
-function createInteriorAnnotations(){
-
-    if(!interiorHeart) return;
-
-    createAnnotations(
-        interiorParts,
-        interiorHeart
-    );
+function clearInteriorMarkers(){
+    interiorMarkerEls.forEach(function(entry){ entry.el.remove(); });
+    interiorMarkerEls = [];
+    selectedHotspotNum = null;
 }
 
-// ============ UPDATE ANATOMICAL MARKERS ============
+// A marker is occluded if a ray from the camera to its world position hits
+// the heart mesh strictly before reaching that position — meaning the model
+// itself is currently in front of that anatomy point (e.g. rotated to the
+// back, or orbited out of view).
+const occlusionRaycaster = new THREE.Raycaster();
 
-function selectHeartPart(part, model, element){
+function isMarkerOccluded(worldPos){
 
-    // Remove previous red selection
-    document
-        .querySelectorAll(".anatomy-marker")
-        .forEach(marker => {
-            marker.classList.remove("affected");
-        });
+    if(!selectableModel) return false;
 
-    // Highlight clicked number
-    element.classList.add("affected");
+    const toMarker = worldPos.clone().sub(camera.position);
+    const distToMarker = toMarker.length();
+    if(distToMarker < 0.001) return false;
 
-    // IMPORTANT:
-    // Don't move or zoom the camera yet.
-    // First we will correctly attach all numbers to the heart.
+    toMarker.normalize();
+    occlusionRaycaster.set(camera.position, toMarker);
+    occlusionRaycaster.far = distToMarker - 0.03; // small epsilon so the anchor's own surface doesn't self-occlude
 
-    // Show selected heart-part information
-    showPartInformation(part);
+    const hits = occlusionRaycaster.intersectObject(selectableModel, true);
+    return hits.length > 0;
+
 }
 
-function showPartInformation(part){
+function updateInteriorMarkers(){
 
-    const diseaseCard = document.getElementById("diseaseCard");
+    if(interiorMarkerEls.length === 0 || !selectableModel) return;
 
-    document.getElementById("partTitle").innerText =
-        "Region " + part.number + " - " + part.name;
+    const w = window.innerWidth, h = window.innerHeight;
 
-    document.getElementById("partName").innerText =
-        part.name;
+    interiorMarkerEls.forEach(function(entry){
 
-    let disease = "No specific condition assigned";
-    let cause = "No specific cause assigned.";
-    let symptoms = "No specific symptoms assigned.";
-    let recommendation = "Clinical assessment is recommended.";
+        const worldPos = entry.anchor.clone();
+        selectableModel.localToWorld(worldPos);
 
-    if(
-        part.name.includes("Coronary") ||
-        part.name.includes("Anterior Descending")
-    ){
-        disease = "Coronary Artery Disease";
-        cause = "Plaque buildup may reduce blood flow in the coronary artery.";
-        symptoms = "Chest pain, shortness of breath, and fatigue.";
-        recommendation = "Consult a cardiologist for further cardiovascular evaluation.";
-    }
+        const projected = worldPos.project(camera);
+        const behind = projected.z > 1;
+        const occluded = !behind && isMarkerOccluded(worldPos);
 
-    document.getElementById("diseaseName").innerText = disease;
-    document.getElementById("causeText").innerText = cause;
-    document.getElementById("symptomText").innerText = symptoms;
-    document.getElementById("recommendationText").innerText = recommendation;
+        const x = (projected.x * 0.5 + 0.5) * w;
+        const y = (-projected.y * 0.5 + 0.5) * h;
 
-    diseaseCard.style.display = "block";
+        entry.el.style.left = (x - 16) + "px";
+        entry.el.style.top = (y - 16) + "px";
+        entry.el.style.display = (behind || occluded) ? "none" : "flex";
+
+    });
+
 }
 
-// ================= SURGICAL MODE =================
+function onInteriorHotspotClick(item, anchorLocal, el){
 
-function toggleSurgery(){
-
-    console.log("Surgical View Activated");
-
-    // 1. Hide the normal/main heart
-    if(heart){
-        heart.visible = false;
+    // toggle off if clicking the already-selected hotspot
+    if(selectedHotspotNum === item.num){
+        resetInteriorSelection();
+        return;
     }
 
-    // 2. Hide both surgical models first
-    if(exteriorHeart){
-        exteriorHeart.visible = false;
-    }
+    selectedHotspotNum = item.num;
 
-    if(interiorHeart){
-        interiorHeart.visible = false;
-    }
+    document.querySelectorAll(".anatomy-marker.numbered").forEach(function(m){
+        m.classList.remove("active");
+        m.classList.add("dimmed");
+    });
+    el.classList.add("active");
+    el.classList.remove("dimmed");
 
-    // 3. Hide the Surgical View button
-    const surgeryBtn = document.getElementById("surgeryBtn");
+    dimHeartExcept();
+    placeHighlightSphere(anchorLocal);
 
-    if(surgeryBtn){
-        surgeryBtn.style.display = "none";
-    }
+    const worldAnchor = anchorLocal.clone();
+    selectableModel.localToWorld(worldAnchor);
 
-    // 4. Show Exterior / Interior / Back controls
-    const surgeryControls = document.getElementById("surgeryControls");
+    controls.minDistance = HOTSPOT_MIN_DISTANCE; // allow the close-up tween below the normal floor
 
-    if(surgeryControls){
-        surgeryControls.style.display = "block";
-    }
+    const camPos = worldAnchor.clone().add(new THREE.Vector3(0, 0.1, 2.4));
+    tweenCamera(camPos, worldAnchor, 900);
 
-    // 5. Clear old anatomical numbers
-    clearAnnotations();
+    showAnatomyDetail(null, item);
 
-    // 6. Hide disease information initially
-    const diseaseCard = document.getElementById("diseaseCard");
-
-    if(diseaseCard){
-        diseaseCard.style.display = "none";
-    }
-
-    // 7. Reset camera
-    camera.position.set(0,0,8);
-    controls.target.set(0,0,0);
-    controls.update();
-
-    // 8. Open Exterior Heart by default
-    showExterior();
 }
 
-function centerHeartModel(model){
+function resetInteriorSelection(){
 
-    // Reset position first
-    model.position.set(0, 0, 0);
+    selectedHotspotNum = null;
 
-    // Get bounding box
-    const box = new THREE.Box3().setFromObject(model);
+    document.querySelectorAll(".anatomy-marker.numbered").forEach(function(m){
+        m.classList.remove("active");
+        m.classList.remove("dimmed");
+    });
 
-    const center = new THREE.Vector3();
-    const size = new THREE.Vector3();
+    clearAnatomyDim();
+    removeHighlightSphere();
 
-    box.getCenter(center);
-    box.getSize(size);
+    controls.minDistance = DEFAULT_MIN_DISTANCE; // restore the normal orbit floor
 
-    // Move GLB so its real center is at 0,0,0
-    model.position.set(
-        -center.x,
-        -center.y,
-        -center.z
-    );
+    const framing = DEFAULT_FRAMING.interior;
+    tweenCamera(framing.pos, framing.target, 900);
 
-    // Get largest dimension
-    const maxSize = Math.max(
-        size.x,
-        size.y,
-        size.z
-    );
+    hideAnatomyDetail();
 
-    // Position camera so complete heart is visible
-    camera.position.set(
-        0,
-        0,
-        maxSize * 1.8
-    );
-
-    controls.target.set(0, 0, 0);
-
-    camera.lookAt(0, 0, 0);
-
-    controls.update();
 }
 
-function showExterior(){
+document.getElementById("closeAnatomyPanel").onclick = function(){
 
-    if(heart) heart.visible = false;
-
-    if(interiorHeart){
-        interiorHeart.visible = false;
+    if(activeView === "interior" && selectedHotspotNum !== null){
+        resetInteriorSelection();
+    } else {
+        document.querySelectorAll(".anatomy-marker").forEach(function(m){ m.classList.remove("active"); });
+        clearHighlight();
+        hideAnatomyDetail();
     }
 
-    if(exteriorHeart){
-
-        exteriorHeart.visible = true;
-
-        exteriorHeart.position.set(0,0,0);
-        exteriorHeart.scale.set(1,1,1);
-
-        // Center heart
-        centerHeartModel(exteriorHeart);
-
-        // IMPORTANT: Create exterior numbers
-        createExteriorAnnotations();
-
-        currentSurgicalHeart = exteriorHeart;
-    }
-
-    // Hide disease information until number is clicked
-    document.getElementById("diseaseCard").style.display = "none";
-}
-
-function showInterior(){
-
-    if(heart) heart.visible = false;
-
-    if(exteriorHeart){
-        exteriorHeart.visible = false;
-    }
-
-    if(interiorHeart){
-
-        interiorHeart.visible = true;
-
-        interiorHeart.position.set(0,0,0);
-        interiorHeart.scale.set(1,1,1);
-
-        // Center heart
-        centerHeartModel(interiorHeart);
-
-        // IMPORTANT: Create interior numbers
-        createInteriorAnnotations();
-
-        currentSurgicalHeart = interiorHeart;
-    }
-
-    // Hide disease information until number is clicked
-    document.getElementById("diseaseCard").style.display = "none";
-}
-
-function closeSurgery(){
-
-    clearAnnotations();
-
-    if(heart){
-        heart.visible = true;
-    }
-
-    if(exteriorHeart){
-        exteriorHeart.visible = false;
-    }
-
-    if(interiorHeart){
-        interiorHeart.visible = false;
-    }
-
-    document.getElementById("surgeryControls").style.display = "none";
-    document.getElementById("surgeryBtn").style.display = "inline-block";
-    document.getElementById("diseaseCard").style.display = "none";
-
-    camera.position.set(0,0,5);
-    controls.target.set(0,0,0);
-    controls.update();
-}
-
-// ================= HEART ANIMATION =================
-
-function animate(){
-requestAnimationFrame(animate);
-
-if(heart && heart.visible){
-
-    const pulse = 1 + Math.sin(Date.now()*pulseSpeed)*0.08;
-
-    heart.scale.set(
-        baseScale*pulse,
-        baseScale*pulse,
-        baseScale*pulse
-    );
-
-    heart.rotation.y += 0.003;
-}
-
-updateAnnotations();
-
-controls.update();
-renderer.render(scene,camera);
-}
-animate();
-
-// ================= PATIENT SWITCH =================
-
-document.getElementById("male").onclick=()=>{
-pulseSpeed=0.01;
-baseScale=1.2;
 };
 
-document.getElementById("female").onclick=()=>{
-pulseSpeed=0.012;
-baseScale=1.1;
+// ============================================================
+// DIM / HIGHLIGHT (interior hotspot selection)
+// ============================================================
+
+function dimHeartExcept(){
+
+    clearAnatomyDim();
+
+    if(!selectableModel) return;
+
+    selectableModel.traverse(function(child){
+        if(child.isMesh && child.material){
+            dimmedMaterials.push({
+                material: child.material,
+                opacity: child.material.opacity
+            });
+            child.material.transparent = true;
+            child.material.opacity = 0.28;
+        }
+    });
+
+}
+
+function clearAnatomyDim(){
+
+    dimmedMaterials.forEach(function(entry){
+        entry.material.opacity = entry.opacity;
+    });
+    dimmedMaterials = [];
+
+}
+
+function placeHighlightSphere(anchorLocal){
+
+    removeHighlightSphere();
+
+    highlightSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.045, 24, 24),
+        new THREE.MeshBasicMaterial({
+            color: 0x00e5ff,
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+    );
+
+    highlightSphere.position.copy(anchorLocal);
+    highlightSphere.userData.pulsePhase = 0;
+    selectableModel.add(highlightSphere);
+
+}
+
+function removeHighlightSphere(){
+    if(highlightSphere){
+        selectableModel && selectableModel.remove(highlightSphere);
+        highlightSphere.geometry.dispose();
+        highlightSphere.material.dispose();
+        highlightSphere = null;
+    }
+}
+
+// ============================================================
+// RAYCAST PART-SELECTION (Exterior heart only — real segmented
+// mesh materials verified against exteriorHeart.glb)
+// ============================================================
+
+function onSceneClick(event){
+
+    if(activeView !== "exterior" || !selectableModel) return;
+
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(pointer, camera);
+
+    const hits = raycaster.intersectObject(selectableModel, true);
+
+    if(hits.length === 0) return;
+
+    const hitMesh = hits[0].object;
+    const matName = hitMesh.material && hitMesh.material.name;
+    const data = EXTERIOR_ANATOMY[matName];
+
+    if(data){
+        highlightMesh(hitMesh);
+        showAnatomyDetail(data, null);
+    }
+
+}
+
+function highlightMesh(mesh){
+
+    clearHighlight();
+
+    if(mesh.material && mesh.material.emissive){
+        highlightedOriginalEmissive = mesh.material.emissive.clone();
+        highlightedOriginalIntensity = mesh.material.emissiveIntensity || 1;
+        mesh.material.emissive.set(0x00d8ff);
+        mesh.material.emissiveIntensity = 1.3;
+    }
+
+    highlightedMesh = mesh;
+
+}
+
+function clearHighlight(){
+
+    if(highlightedMesh && highlightedMesh.material &&
+       highlightedMesh.material.emissive && highlightedOriginalEmissive){
+        highlightedMesh.material.emissive.copy(highlightedOriginalEmissive);
+        highlightedMesh.material.emissiveIntensity = highlightedOriginalIntensity;
+    }
+
+    highlightedMesh = null;
+    highlightedOriginalEmissive = null;
+
+}
+
+// ============================================================
+// INFO PANEL — dynamically switches between:
+//  (a) vitals mode (Heart Rate / BP / Oxygen / Disease / Recommendation)
+//  (b) anatomy-detail mode (Part / Description / Function / Diseases /
+//      Causes / Symptoms / Risk Factors / Recommendation / Severity /
+//      Medical Illustration) — only shown when a hotspot is clicked.
+// ============================================================
+
+function renderVitalsPanel(){
+
+    document.getElementById("infoCardIcon").textContent = "\u2764\ufe0f";
+    document.getElementById("infoCardTitle").textContent = "Heart Information";
+
+    const p = currentPatient;
+
+    document.getElementById("infoCardBody").innerHTML =
+        '<div class="infoRow"><span class="infoRowIcon">\ud83d\udc93</span>' +
+            '<span class="infoRowLabel">Heart Rate</span>' +
+            '<span class="infoRowValue" id="infoRate">' + p.bpm + ' BPM</span></div>' +
+        '<div class="infoRow"><span class="infoRowIcon">\ud83e\ude7a</span>' +
+            '<span class="infoRowLabel">Blood Pressure</span>' +
+            '<span class="infoRowValue">' + p.bp + '</span></div>' +
+        '<div class="infoRow"><span class="infoRowIcon">\ud83d\udca7</span>' +
+            '<span class="infoRowLabel">Oxygen Saturation</span>' +
+            '<span class="infoRowValue">' + p.oxygen + '</span></div>' +
+        '<div class="infoRow"><span class="infoRowIcon">\ud83e\ude7a</span>' +
+            '<span class="infoRowLabel">Disease Status</span>' +
+            '<span class="infoRowValue good" id="infoStatus">' + p.status + '</span></div>' +
+        '<div class="infoRow"><span class="infoRowIcon">\ud83d\udc9a</span>' +
+            '<span class="infoRowLabel">Recommendation</span>' +
+            '<span class="infoRowValue">' + p.recommendation + '</span></div>';
+
+}
+
+function showAnatomyDetail(simpleData, richData){
+
+    document.getElementById("infoCardIcon").textContent = "\ud83e\udec0";
+
+    if(richData){
+
+        // Interior hotspot (full clinical schema)
+        document.getElementById("infoCardTitle").textContent =
+            richData.num + ". " + richData.title;
+
+        const sevColor = SEVERITY_COLOR[richData.severity] || "#00d8ff";
+
+        document.getElementById("infoCardBody").innerHTML =
+            '<div class="anatomyIllustration" style="border-color:' + sevColor + '">' +
+                '<span style="color:' + sevColor + '">\u2764\ufe0f</span>' +
+            '</div>' +
+            detailRow("Description", richData.desc) +
+            detailRow("Function", richData.func) +
+            detailRow("Common Diseases", richData.diseases) +
+            detailRow("Causes", richData.causes) +
+            detailRow("Symptoms", richData.symptoms) +
+            detailRow("Risk Factors", richData.riskFactors) +
+            detailRow("Recommendation", richData.recommendation) +
+            '<div class="infoRow"><span class="infoRowLabel">Severity</span>' +
+                '<span class="infoRowValue" style="color:' + sevColor + '">' + richData.severity + '</span></div>';
+
+    } else {
+
+        // Overview marker or exterior raycast hit (simpler schema)
+        document.getElementById("infoCardTitle").textContent = simpleData.title;
+
+        document.getElementById("infoCardBody").innerHTML =
+            detailRow("Condition", simpleData.disease) +
+            detailRow("Cause", simpleData.cause) +
+            detailRow("Symptoms", simpleData.symptoms) +
+            detailRow("Recommendation", simpleData.recommendation);
+
+    }
+
+}
+
+function detailRow(label, value){
+    return '<div class="detailRow"><div class="detailLabel">' + label + '</div>' +
+           '<div class="detailValue">' + value + '</div></div>';
+}
+
+function hideAnatomyDetail(){
+    renderVitalsPanel();
+}
+
+// ============================================================
+// SURGICAL VIEW MENU
+// ============================================================
+
+const surgeryBtn = document.getElementById("surgeryBtnTop");
+const surgeryMenu = document.getElementById("surgeryMenu");
+const arrow = document.getElementById("arrow");
+
+let menuOpen = false;
+
+surgeryBtn.onclick = function(){
+
+    menuOpen = !menuOpen;
+
+    if(menuOpen){
+        surgeryMenu.classList.add("open");
+        arrow.innerHTML = "\u25bc";
+    } else {
+        surgeryMenu.classList.remove("open");
+        arrow.innerHTML = "\u25b6";
+    }
+
 };
 
-document.getElementById("child").onclick=()=>{
-pulseSpeed=0.02;
-baseScale=0.9;
-};
+document.getElementById("showOverview").onclick = function(){ loadModel("overview"); };
+document.getElementById("showExterior").onclick = function(){ loadModel("exterior"); };
+document.getElementById("showInterior").onclick = function(){ loadModel("interior"); };
 
-// ================= API =================
+function updateSurgeryMenuActiveState(view){
 
-async function fetchData(){
-try{
-const res = await fetch("/api/health");
-const data = await res.json();
+    document.querySelectorAll(".surgeryOptionBtn").forEach(function(btn){
+        btn.classList.remove("active");
+    });
 
-document.getElementById("bpm").innerText=Math.round(data.bpm)+" BPM";
+    const map = { overview: "showOverview", exterior: "showExterior", interior: "showInterior" };
+    document.getElementById(map[view]).classList.add("active");
 
-if(data.status.includes("Abnormal")){
-document.getElementById("status").innerText="⚠ Blockage Detected";
-document.getElementById("status").style.color="red";
-pulseSpeed=0.02;
-
-if(blockageRing) blockageRing.visible = true;
-
-}else{
-document.getElementById("status").innerText="✔ Normal";
-document.getElementById("status").style.color="#00ff88";
-pulseSpeed=0.01;
-
-if(blockageRing) blockageRing.visible = false;
 }
-}catch(e){}
+
+function updateViewBadge(view){
+    document.getElementById("viewBadge").textContent = VIEW_LABELS[view];
 }
-setInterval(fetchData,2000);
 
-// ================= RESIZE =================
+// ============================================================
+// PATIENT SELECTION
+// (updates Heart Rate, Scale, Pump Speed, Glow, BP, Oxygen,
+//  Recommendation, Status and Prediction live, no reload)
+// ============================================================
 
-window.addEventListener("resize",()=>{
-camera.aspect=window.innerWidth/window.innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(window.innerWidth,window.innerHeight);
-});
+function applyGlow(hexColor){
+
+    if(!heart) return;
+
+    const targetTree = selectableModel || heart;
+
+    targetTree.traverse(function(child){
+        if(child.isMesh && child.material && child.material.emissive){
+            child.material.emissive.setHex(hexColor);
+            child.material.emissiveIntensity = 0.35;
+        }
+    });
+
+}
+
+function selectPatient(cardId, key){
+
+    const cfg = PATIENT_PROFILES[key];
+    currentPatient = cfg;
+
+    currentScale = cfg.scale;
+    currentBeatSpeed = cfg.beatSpeed;
+    currentBeatStrength = cfg.beatStrength;
+
+    applyGlow(cfg.glow);
+
+    document.querySelectorAll(".patientCard").forEach(function(c){ c.classList.remove("active"); });
+    document.getElementById(cardId).classList.add("active");
+
+    document.getElementById("bpm").innerHTML = cfg.bpm + ' <span class="unit">BPM</span>';
+    document.getElementById("heartStatus").textContent = "\u2714 " + cfg.status;
+
+    const co = ((cfg.bpm * cfg.strokeVolumeMl) / 1000).toFixed(1);
+    document.getElementById("statOutput").textContent = co + " L/min";
+    document.getElementById("statPrediction").textContent = cfg.prediction;
+
+    // reset any hotspot selection so the vitals panel reflects the new patient
+    if(activeView === "interior" && selectedHotspotNum !== null){
+        resetInteriorSelection();
+    } else {
+        renderVitalsPanel();
+    }
+
+    console.log(cardId + " selected");
+
+}
+
+document.getElementById("maleCard").onclick = function(){ selectPatient("maleCard", "male"); };
+document.getElementById("femaleCard").onclick = function(){ selectPatient("femaleCard", "female"); };
+document.getElementById("childCard").onclick = function(){ selectPatient("childCard", "child"); };
+
+// ============================================================
+// ECG SPARKLINE (top-left panel)
+// ============================================================
+
+const ecgCanvas = document.getElementById("ecgSparkline");
+const ecgCtx = ecgCanvas.getContext("2d");
+const ecgBuffer = new Array(60).fill(0);
+let ecgTick = 0;
+
+function ecgSample(i){
+    // synthetic PQRST-like waveform, spaced by (roughly) heart rate
+    const bpm = currentPatient.bpm;
+    const period = Math.max(18, Math.round(3600 / bpm));
+    const phase = i % period;
+    if(phase === Math.floor(period * 0.28)) return 0.9;
+    if(phase === Math.floor(period * 0.28) + 1) return -0.5;
+    if(phase === Math.floor(period * 0.32)) return 0.15;
+    return 0.03 * Math.sin(i * 0.5);
+}
+
+let lastEcgUpdate = 0;
+
+function updateSparkline(){
+
+    const now = Date.now();
+    if(now - lastEcgUpdate < 45) return;
+    lastEcgUpdate = now;
+
+    ecgTick++;
+    ecgBuffer.shift();
+    ecgBuffer.push(ecgSample(ecgTick));
+
+    ecgCtx.clearRect(0, 0, ecgCanvas.width, ecgCanvas.height);
+    ecgCtx.beginPath();
+    ecgCtx.strokeStyle = "#00e5ff";
+    ecgCtx.lineWidth = 1.6;
+
+    const w = ecgCanvas.width, h = ecgCanvas.height, mid = h / 2;
+
+    ecgBuffer.forEach(function(v, i){
+        const x = (i / (ecgBuffer.length - 1)) * w;
+        const y = mid - v * (h * 0.42);
+        if(i === 0) ecgCtx.moveTo(x, y);
+        else ecgCtx.lineTo(x, y);
+    });
+
+    ecgCtx.stroke();
+
+}
+
+// ============================================================
+// "LAST UPDATE" relative timestamp
+// ============================================================
+
+let lastUpdateTime = Date.now();
+
+setInterval(function(){
+    const seconds = Math.floor((Date.now() - lastUpdateTime) / 1000);
+    const el = document.getElementById("statUpdate");
+    if(!el) return;
+    el.textContent = seconds < 3 ? "Just now" : seconds + "s ago";
+}, 1000);
+
+// ============================================================
+// INITIAL PANEL STATE
+// ============================================================
+
+// Drives BPM/BP/oxygen/status/prediction and the patient-card "active"
+// highlight through the same path as a real click, so the UI's default
+// state actually matches currentPatient (previously the male card never
+// got marked active, and the hardcoded 82 BPM in the HTML didn't match
+// any patient profile's real value).
+selectPatient("maleCard", "male");
+
+try {
+    init();
+    animate();
+} catch(fatalErr){
+    console.error("Cardiac Digital Twin: fatal error starting the 3D scene — the heart will not render.", fatalErr);
+    const loaderText = document.getElementById("loaderText");
+    const overlay = document.getElementById("modelLoader");
+    const progressTrack = document.querySelector(".progressTrack");
+    if(loaderText) loaderText.textContent = "3D engine failed to start: " + fatalErr.message;
+    if(progressTrack) progressTrack.style.display = "none";
+    if(overlay) overlay.style.display = "flex";
+}
 
 
 </script>
+
 </body>
 </html>
