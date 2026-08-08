@@ -1,87 +1,358 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Brain Signal AI - Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Monitoring AI - Login</title>
     <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            font-family: 'Segoe UI', sans-serif;
-            color: white;
+        :root{
+            --accent:#00FF99;
+            --accent-dark:#00b06b;
+            --text-dark:#0b2e22;
         }
 
-        .login-card {
-            background: rgba(255,255,255,0.08);
-            padding: 40px;
-            border-radius: 20px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 0 40px rgba(0,255,255,0.3);
-            text-align: center;
-            width: 320px;
+        *{ box-sizing:border-box; }
+
+        body{
+            margin:0;
+            min-height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:#ffffff;
+            font-family:'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+            color:var(--text-dark);
+            position:relative;
+            overflow-x:hidden;
         }
 
-        h2 {
-            margin-bottom: 25px;
+        .bg-layer{
+            position:fixed;
+            inset:0;
+            z-index:0;
+            pointer-events:none;
+            overflow:hidden;
         }
 
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: none;
-            outline: none;
+        .bg-heart{
+            position:absolute;
+            top:6%;
+            left:2%;
+            width:390px;
+            max-width:38vw;
+            opacity:0.55;
+            filter:grayscale(15%);
         }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 15px;
-            border-radius: 10px;
-            border: none;
-            background: cyan;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
+        .bg-ecg-machine{
+            position:absolute;
+            top:12%;
+            right:10%;
+            width:285px;
+            max-width:32vw;
+            opacity:0.6;
         }
 
-        button:hover {
-            background: #00ffff;
-            box-shadow: 0 0 15px cyan;
+        .bg-tool-large{
+            position:absolute;
+            top:50%;
+            transform:translateY(-50%);
+            width:34vw;
+            max-width:480px;
+            min-width:260px;
+            opacity:0.28;
+            filter:grayscale(35%);
         }
 
-        .error {
-            background: #ff4d4d;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-
+        .bg-tool-large.left{
+            left:-40px;
         }
 
-        a {
-            display: block;
-            margin-top: 15px;
-            color: cyan;
-            text-decoration: none;
+        .bg-tool-large.right{
+            right:-40px;
+            transform:translateY(-50%) scaleX(-1);
         }
 
-        a:hover {
-            text-decoration: underline;
+        @media (max-width:1150px){
+            .bg-tool-large{ width:26vw; opacity:0.22; }
+        }
 
+        @media (max-width:860px){
+            .bg-tool-large{ display:none; }
+        }
+
+        /* Large surgical-tool artwork spanning behind the title area */
+        .bg-tool-title{
+            position:absolute;
+            top:-40px;
+            left:50%;
+            transform:translateX(-50%);
+            width:78vw;
+            max-width:1100px;
+            min-width:520px;
+            opacity:0.3;
+            filter:grayscale(35%);
+            z-index:0;
+        }
+
+        @media (max-width:1150px){
+            .bg-tool-title{ width:88vw; top:-10px; opacity:0.22; }
+        }
+
+        @media (max-width:860px){
+            .bg-tool-title{ display:none; }
+        }
+
+        .ecg-wave{
+            position:absolute;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:120px;
+            opacity:0.62;
+        }
+
+        .ecg-wave path{
+            fill:none;
+            stroke:var(--accent);
+            stroke-width:2;
+            stroke-dasharray:1400;
+            stroke-dashoffset:1400;
+            animation:drawEcg 5.5s linear infinite;
+        }
+
+        @keyframes drawEcg{
+            to{ stroke-dashoffset:0; }
+        }
+
+        .doctor{
+            position:fixed;
+            bottom:0;
+            z-index:1;
+            height:78vh;
+            max-height:640px;
+            width:auto;
+            object-fit:contain;
+            opacity:0.7;
+            pointer-events:none;
+        }
+
+        .doctor-male{ left:2%; }
+        .doctor-female{ right:2%; }
+
+        @media (max-width:1150px){
+            .doctor{ height:56vh; opacity:0.6; }
+        }
+
+        @media (max-width:860px){
+            .doctor{ display:none; }
+        }
+
+        .brand{
+            position:fixed;
+            top:22px;
+            left:50%;
+            transform:translateX(-50%);
+            text-align:center;
+            z-index:2;
+        }
+
+        .brand h1{
+            margin:0;
+            font-size:clamp(2.6rem, 4.8vw, 3.8rem);
+            font-weight:800;
+            letter-spacing:1px;
+            color:var(--text-dark);
+            line-height:1.05;
+        }
+
+        .brand h1 span{
+            color:var(--accent-dark);
+        }
+
+        .brand p{
+            margin:10px 0 0;
+            font-size:clamp(13px, 1.2vw, 16px);
+            font-weight:600;
+            letter-spacing:1.6px;
+            text-transform:uppercase;
+            color:#4a8c72;
+        }
+
+        @media (max-width:860px){
+            .brand{ top:16px; }
+            .brand h1{ font-size:2rem; }
+        }
+
+        .login-card{
+            position:relative;
+            z-index:3;
+            background:#ffffff;
+            padding:52px 46px;
+            border-radius:24px;
+            border:1.5px solid rgba(0,255,153,0.35);
+            box-shadow:0 14px 50px rgba(0,150,90,0.15);
+            text-align:center;
+            width:440px;
+            margin-top:110px;
+        }
+
+        .login-card h2{
+            margin:0 0 10px;
+            font-size:27px;
+            font-weight:800;
+            color:var(--text-dark);
+        }
+
+        .login-card .subtitle{
+            margin:0 0 30px;
+            font-size:14.5px;
+            color:#5f7d72;
+        }
+
+        .field{
+            position:relative;
+            margin:20px 0;
+            text-align:left;
+        }
+
+        .field label{
+            display:block;
+            font-size:12.5px;
+            font-weight:700;
+            letter-spacing:.4px;
+            text-transform:uppercase;
+            color:#3f6e5a;
+            margin-bottom:8px;
+        }
+
+        input{
+            width:100%;
+            padding:16px 16px;
+            border-radius:12px;
+            border:1.5px solid #d8ece3;
+            outline:none;
+            font-size:16px;
+            color:var(--text-dark);
+            background:#f7fdfa;
+            transition:border-color .2s ease, box-shadow .2s ease;
+        }
+
+        input:focus{
+            border-color:var(--accent);
+            box-shadow:0 0 0 3px rgba(0,255,153,0.18);
+        }
+
+        input#password{
+            padding-right:50px;
+        }
+
+        .password-toggle{
+            position:absolute;
+            right:14px;
+            top:44px;
+            cursor:pointer;
+            font-size:13.5px;
+            color:#4a8c72;
+            font-weight:700;
+            user-select:none;
+        }
+
+        .forgot-link{
+            display:block;
+            text-align:right;
+            margin:10px 0 26px;
+            font-size:13.5px;
+            color:var(--accent-dark);
+            text-decoration:none;
+            font-weight:600;
+        }
+
+        .forgot-link:hover{
+            text-decoration:underline;
+        }
+
+        button[type="submit"]{
+            width:100%;
+            padding:16px;
+            border-radius:12px;
+            border:none;
+            background:var(--accent);
+            color:#053022;
+            font-weight:800;
+            font-size:16px;
+            letter-spacing:.3px;
+            cursor:pointer;
+            transition:background .2s ease, box-shadow .2s ease, transform .1s ease;
+        }
+
+        button[type="submit"]:hover{
+            background:var(--accent-dark);
+            color:#ffffff;
+            box-shadow:0 4px 16px rgba(0,255,153,0.35);
+        }
+
+        button[type="submit"]:active{
+            transform:translateY(1px);
+        }
+
+        .error{
+            background:#ffe3e3;
+            color:#b3261e;
+            border:1px solid #f5b5b5;
+            padding:12px;
+            border-radius:10px;
+            margin-bottom:20px;
+            font-size:13.5px;
+            text-align:left;
+        }
+
+        .signup-link{
+            display:block;
+            margin-top:28px;
+            font-size:14px;
+            color:#3f6e5a;
+            text-decoration:none;
+        }
+
+        .signup-link:hover{
+            text-decoration:underline;
+        }
+
+        @media (max-width:500px){
+            .login-card{ width:92vw; padding:36px 24px; margin-top:150px; }
         }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <h2>🧠 Brain Signal Admin</h2>
+<div class="bg-layer">
+    <img class="bg-heart" src="/static/images/heart.png" alt="">
+    <img class="bg-ecg-machine" src="/static/images/ecg_machine.png" alt="">
 
-    <!-- ERROR MESSAGE -->
+    <img class="bg-tool-large left" src="/static/images/surgical_tools.png" alt="">
+    <img class="bg-tool-large right" src="/static/images/surgical_tools.png" alt="">
+    <img class="bg-tool-title" src="/static/images/surgical_tools.png" alt="">
+
+    <svg class="ecg-wave" viewBox="0 0 1400 120" preserveAspectRatio="none">
+        <path d="M0,60 L120,60 L150,20 L180,100 L210,60 L340,60 L370,40 L400,80 L430,60 L560,60
+                 L590,20 L620,100 L650,60 L780,60 L810,40 L840,80 L870,60 L1000,60
+                 L1030,20 L1060,100 L1090,60 L1220,60 L1250,40 L1280,80 L1310,60 L1400,60"></path>
+    </svg>
+</div>
+
+<img class="doctor doctor-male" src="/static/images/doctor_male.png" alt="">
+<img class="doctor doctor-female" src="/static/images/doctor_female.png" alt="">
+
+<div class="brand">
+    <h1>HEART <span>MONITORING</span> AI</h1>
+    <p>AI-Based Cardiac Digital Twin and Metaverse</p>
+</div>
+
+<div class="login-card">
+    <h2>Doctor Login</h2>
+    <p class="subtitle">Welcome back! Please login to continue</p>
+
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <div class="error">{{ messages[0] }}</div>
@@ -89,22 +360,38 @@
     {% endwith %}
 
     <form method="POST">
-        <input type="text" name="username" placeholder="Username">
-        <input type="password" name="password" placeholder="Password">
+        <div class="field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Enter your username" required>
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <span class="password-toggle" onclick="togglePassword()" id="toggleLabel">SHOW</span>
+        </div>
+
+        <a href="#" class="forgot-link">Forgot Password?</a>
+
         <button type="submit">Login</button>
     </form>
 
-    <h2>🧠 Doctor Login</h2>
-    <form method="POST">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <button type="submit">Login</button>
-    </form>
-
-    <!-- ✅ Signup link inside card -->
-    <a href="/signup">New Doctor? Create Account</a>
-
+    <a class="signup-link" href="/signup">New Doctor? Create Account</a>
 </div>
+
+<script>
+    function togglePassword(){
+        const input = document.getElementById("password");
+        const label = document.getElementById("toggleLabel");
+        if(input.type === "password"){
+            input.type = "text";
+            label.textContent = "HIDE";
+        } else {
+            input.type = "password";
+            label.textContent = "SHOW";
+        }
+    }
+</script>
 
 </body>
 </html>
