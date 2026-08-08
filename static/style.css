@@ -97,13 +97,14 @@ html, body{
 }
 
 /* ============================================================
-   TOP LEFT — CARDIAC DIGITAL TWIN PANEL
+   TOP CENTER — CARDIAC DIGITAL TWIN PANEL
 ============================================================ */
 
 #mainPanel{
     position:fixed;
     top:28px;
-    left:28px;
+    left:50%;
+    transform:translateX(-50%);
     width:300px;
     padding:20px 22px;
     border-radius:18px;

@@ -278,31 +278,155 @@ const OVERVIEW_ANATOMY = {
     }
 };
 
-// Exterior heart real segmented structures (verified against the
-// actual glTF material names baked into exteriorHeart.glb).
-const EXTERIOR_ANATOMY = {
-    "main_body2": {
-        title: "Myocardium (Heart Wall)",
-        disease: "Myocardial Infarction / Cardiomyopathy",
-        cause: "Coronary artery blockage cutting off blood supply, or chronic muscle weakening.",
-        symptoms: "Chest pain, shortness of breath, fatigue.",
-        recommendation: "Emergency evaluation for acute chest pain; ongoing medical management."
-    },
-    "right_coronary_artery_2": {
-        title: "Right Coronary Artery",
-        disease: "Right Coronary Artery Disease",
-        cause: "Atherosclerotic plaque restricting blood flow to the right ventricle.",
-        symptoms: "Angina, signs of inferior-wall heart attack, bradycardia.",
-        recommendation: "Coronary angiography; stenting or bypass depending on severity."
-    },
-    "middle_cardiac_vein": {
-        title: "Middle Cardiac Vein",
-        disease: "Cardiac Venous Congestion",
-        cause: "Impaired venous drainage, often secondary to right-sided heart failure.",
-        symptoms: "Usually silent; contributes to fluid build-up.",
-        recommendation: "Manage underlying heart failure and monitor fluid status."
-    }
-};
+// Exterior heart — the 13 clinically-canonical numbered hotspots covering
+// the complete external anatomy (great vessels, chambers, coronary
+// vasculature, epicardium, apex). Positions are computed at runtime from
+// the model's real bounding box (see buildExteriorMarkers), exactly like
+// the Interior Heart hotspots below — not hardcoded pixel guesses.
+const EXTERIOR_ANATOMY = [
+    { num: 1, key: "AORTA", title: "Aorta",
+      desc: "The body's largest artery, arching upward from the left ventricle before descending through the chest.",
+      func: "Carries oxygen-rich blood from the left ventricle to the entire systemic circulation.",
+      diseases: "Aortic Aneurysm, Aortic Dissection, Atherosclerosis",
+      causes: "Chronic hypertension, atherosclerosis, connective tissue disorders (e.g. Marfan syndrome).",
+      symptoms: "Often silent; sudden severe chest/back pain if dissection occurs.",
+      riskFactors: "Hypertension, smoking, family history, bicuspid aortic valve.",
+      recommendation: "Routine imaging (CT/echo) for surveillance; strict blood pressure control.",
+      severity: "High",
+      offset: {x:-0.05, y:0.95, z:-0.05} },
+
+    { num: 2, key: "PA", title: "Pulmonary Artery",
+      desc: "The vessel arising from the right ventricle that splits into left and right branches carrying blood to the lungs.",
+      func: "Transports deoxygenated blood to the lungs for gas exchange.",
+      diseases: "Pulmonary Hypertension, Pulmonary Embolism",
+      causes: "Chronic lung disease, blood clots, left heart disease.",
+      symptoms: "Shortness of breath, fatigue, chest pain.",
+      riskFactors: "Immobility, clotting disorders, chronic lung disease.",
+      recommendation: "CT pulmonary angiography if embolism suspected; manage underlying disease.",
+      severity: "High",
+      offset: {x:0.20, y:0.80, z:-0.25} },
+
+    { num: 3, key: "SVC", title: "Superior Vena Cava",
+      desc: "Large vein draining blood from the head, neck and upper limbs into the right atrium.",
+      func: "Returns deoxygenated venous blood from the upper body to the heart.",
+      diseases: "Superior Vena Cava Syndrome",
+      causes: "Compression from tumors, blood clots, or fibrosis.",
+      symptoms: "Facial/neck swelling, distended neck veins, breathlessness.",
+      riskFactors: "Lung cancer, mediastinal masses, indwelling catheters.",
+      recommendation: "Imaging to identify the obstruction; treat the underlying cause.",
+      severity: "Moderate",
+      offset: {x:0.50, y:0.70, z:0.10} },
+
+    { num: 4, key: "IVC", title: "Inferior Vena Cava",
+      desc: "Large vein draining blood from the lower body and abdomen into the right atrium.",
+      func: "Returns deoxygenated venous blood from the lower body to the heart.",
+      diseases: "IVC Thrombosis, IVC Compression",
+      causes: "Deep vein thrombosis extension, compression, hypercoagulable states.",
+      symptoms: "Leg swelling, abdominal pain, risk of pulmonary embolism.",
+      riskFactors: "Prolonged immobility, clotting disorders, pregnancy.",
+      recommendation: "Doppler ultrasound; anticoagulation if thrombosis confirmed.",
+      severity: "Moderate",
+      offset: {x:0.40, y:-0.80, z:0.15} },
+
+    { num: 5, key: "PV", title: "Pulmonary Veins",
+      desc: "Four veins, two from each lung, that carry oxygen-rich blood back to the left atrium.",
+      func: "Return freshly oxygenated blood from the lungs to the heart.",
+      diseases: "Pulmonary Vein Stenosis, Atrial Fibrillation (common arrhythmia origin)",
+      causes: "Post-ablation scarring, congenital narrowing, chronic atrial stretch.",
+      symptoms: "Breathlessness, palpitations, recurrent respiratory symptoms.",
+      riskFactors: "Prior catheter ablation, congenital heart disease.",
+      recommendation: "Echocardiogram/CT venous imaging; cardiology evaluation for arrhythmia.",
+      severity: "Moderate",
+      offset: {x:-0.55, y:0.55, z:-0.35} },
+
+    { num: 6, key: "LA", title: "Left Atrium",
+      desc: "Upper-left chamber that receives oxygenated blood from the pulmonary veins.",
+      func: "Collects oxygen-rich blood and pumps it through the mitral valve into the left ventricle.",
+      diseases: "Atrial Fibrillation, Left Atrial Enlargement",
+      causes: "Hypertension, mitral valve disease, aging-related fibrosis.",
+      symptoms: "Palpitations, fatigue, shortness of breath.",
+      riskFactors: "Age, high blood pressure, obesity, sleep apnea.",
+      recommendation: "ECG monitoring, blood pressure control, anticoagulation if fibrillation present.",
+      severity: "Moderate",
+      offset: {x:-0.45, y:0.60, z:-0.20} },
+
+    { num: 7, key: "RA", title: "Right Atrium",
+      desc: "Upper-right chamber that receives deoxygenated blood returning from the venae cavae.",
+      func: "Collects venous blood and pumps it through the tricuspid valve into the right ventricle.",
+      diseases: "Atrial Septal Defect, Tricuspid Regurgitation",
+      causes: "Congenital defect, right heart volume overload.",
+      symptoms: "Fatigue, leg swelling, irregular heartbeat.",
+      riskFactors: "Congenital heart disease, pulmonary hypertension.",
+      recommendation: "Echocardiogram evaluation; cardiology follow-up.",
+      severity: "Moderate",
+      offset: {x:0.45, y:0.35, z:0.25} },
+
+    { num: 8, key: "LV", title: "Left Ventricle",
+      desc: "Thick-walled main pumping chamber that sends oxygenated blood to the entire body.",
+      func: "Generates the pressure needed to circulate blood through the body via the aorta.",
+      diseases: "Left Ventricular Hypertrophy, Heart Failure, Myocardial Infarction",
+      causes: "Chronic hypertension, coronary artery disease, aortic valve disease.",
+      symptoms: "Breathlessness, chest discomfort, fatigue, fluid retention.",
+      riskFactors: "High blood pressure, diabetes, smoking, high cholesterol.",
+      recommendation: "Blood pressure control, echocardiogram, heart failure therapy.",
+      severity: "High",
+      offset: {x:-0.30, y:-0.35, z:0.35} },
+
+    { num: 9, key: "RV", title: "Right Ventricle",
+      desc: "The most anteriorly positioned chamber, pumping deoxygenated blood onward to the lungs.",
+      func: "Sends blood through the pulmonary valve and pulmonary artery to the lungs.",
+      diseases: "Right Ventricular Dysfunction, Pulmonary Hypertension",
+      causes: "Chronic lung disease, pulmonary embolism, elevated pulmonary pressure.",
+      symptoms: "Fatigue, leg swelling, exertional breathlessness.",
+      riskFactors: "COPD, history of pulmonary embolism, sleep apnea.",
+      recommendation: "Pulmonary function testing; right-heart catheterization if indicated.",
+      severity: "Moderate",
+      offset: {x:0.15, y:-0.30, z:0.40} },
+
+    { num: 10, key: "CORO_ART", title: "Coronary Arteries",
+      desc: "The right and left coronary arteries branch across the heart's surface, supplying the muscle itself.",
+      func: "Deliver oxygen-rich blood to the myocardium so the heart muscle can contract.",
+      diseases: "Coronary Artery Disease, Myocardial Infarction",
+      causes: "Atherosclerotic plaque build-up narrowing or blocking blood flow.",
+      symptoms: "Angina, chest pressure, shortness of breath, heart attack symptoms.",
+      riskFactors: "Smoking, high cholesterol, hypertension, diabetes, family history.",
+      recommendation: "Coronary angiography; lifestyle changes, stenting, or bypass depending on severity.",
+      severity: "High",
+      offset: {x:-0.20, y:0.15, z:0.45} },
+
+    { num: 11, key: "CORO_VEIN", title: "Coronary Veins",
+      desc: "Veins, including the great and middle cardiac veins, that drain deoxygenated blood from the heart muscle into the coronary sinus.",
+      func: "Collect blood from the myocardium and return it to the right atrium via the coronary sinus.",
+      diseases: "Cardiac Venous Congestion",
+      causes: "Impaired venous drainage, often secondary to right-sided heart failure.",
+      symptoms: "Usually silent; contributes to fluid build-up in advanced disease.",
+      riskFactors: "Heart failure, elevated right-heart pressures.",
+      recommendation: "Manage the underlying heart failure and monitor fluid status.",
+      severity: "Low",
+      offset: {x:0.10, y:-0.15, z:0.42} },
+
+    { num: 12, key: "EPI", title: "Epicardial Surface",
+      desc: "The thin outer layer covering the heart muscle, the innermost layer of the pericardial sac.",
+      func: "Protects the heart and carries the coronary vessels that nourish the muscle beneath it.",
+      diseases: "Pericarditis, Epicardial Fat Accumulation",
+      causes: "Viral infection, autoimmune inflammation, metabolic syndrome.",
+      symptoms: "Sharp chest pain that worsens lying down, low-grade fever, friction rub.",
+      riskFactors: "Recent viral illness, autoimmune disease, obesity.",
+      recommendation: "Anti-inflammatory treatment for pericarditis; monitor cardiometabolic risk.",
+      severity: "Low",
+      offset: {x:0.00, y:-0.05, z:0.48} },
+
+    { num: 13, key: "APEX", title: "Apex of Heart",
+      desc: "The pointed lower tip of the heart, formed mainly by the left ventricle, angled toward the lower-left chest.",
+      func: "The point of maximal cardiac impulse — where the heartbeat can be felt or heard most strongly.",
+      diseases: "Apical Aneurysm, Apical Hypertrophic Cardiomyopathy",
+      causes: "Post-infarction scarring, genetic hypertrophic cardiomyopathy.",
+      symptoms: "Palpitations, breathlessness, chest discomfort.",
+      riskFactors: "Prior heart attack, family history of cardiomyopathy.",
+      recommendation: "Echocardiogram to assess apical wall motion and thickness.",
+      severity: "Moderate",
+      offset: {x:-0.10, y:-0.95, z:0.30} }
+];
 
 // Interior heart — the 13 clinically-canonical numbered hotspots
 // requested. Positions are computed at runtime from the model's
@@ -516,7 +640,12 @@ const VIEW_LABELS = {
 
 const HEART_X = 0; // heart is perfectly centered on screen
 const RING_COUNT = 9;
-const PLATFORM_Y = -2.35;
+const PLATFORM_Y = -2.35;       // initial fallback only, before any model has loaded
+const PLATFORM_GAP_RATIO = 0.075; // gap above the rings = 7.5% of the heart's current
+                                   // world height (within the requested 5-10% band);
+                                   // the platform is repositioned every frame in
+                                   // updatePlatformPosition() to track the heart's
+                                   // actual normalized height/scale — never a fixed distance
 const DEFAULT_MIN_DISTANCE = 5;   // normal orbit floor
 const HOTSPOT_MIN_DISTANCE = 1.2; // relaxed floor while zoomed into a hotspot,
                                    // so OrbitControls doesn't fight the zoom tween
@@ -557,15 +686,9 @@ let pumpEnabled = true;
 let platformGroup;
 let overviewMarkerEls = [];
 let interiorMarkerEls = [];
-let highlightedMesh = null;
-let highlightedOriginalEmissive = null;
-let highlightedOriginalIntensity = 1;
+let exteriorMarkerEls = [];
 let selectedHotspotNum = null;
-let highlightSphere = null;
-let dimmedMaterials = [];      // stores {material, opacity, transparent} while dimmed
-
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
+let highlightSphere = null;    // small standalone marker mesh only — never touches the heart's own material
 
 // Camera tween state
 let camTween = null; // {startPos, endPos, startTarget, endTarget, t0, duration}
@@ -669,7 +792,6 @@ function init(){
     loadModel("overview", true);
 
     window.addEventListener("resize", onResize);
-    renderer.domElement.addEventListener("click", onSceneClick);
 
 }
 
@@ -778,6 +900,28 @@ function buildHologramPlatform(){
 
 }
 
+// Keeps the ring platform's Y position locked to the heart's CURRENT
+// world height (heart.scale.y, which already reflects patient scale and
+// the live beating-pulse animation) so the gap between the bottom of the
+// heart and the top of the rings always stays ~5-10% of the heart's
+// height — instead of a large fixed distance. The heart itself is never
+// moved; only the platform (and it stays on the same X-axis as the heart).
+function updatePlatformPosition(){
+
+    if(!platformGroup) return;
+
+    platformGroup.position.x = HEART_X;
+
+    if(!heart) return;
+
+    const heartWorldHeight = MODEL_TARGET_HEIGHT * heart.scale.y;
+    const heartBottomY = -heartWorldHeight / 2; // heart rig is always vertically centered at y=0
+    const gap = heartWorldHeight * PLATFORM_GAP_RATIO;
+
+    platformGroup.position.y = heartBottomY - gap;
+
+}
+
 function animatePlatform(){
 
     if(!platformGroup) return;
@@ -803,10 +947,11 @@ function animatePlatform(){
 // ANIMATE LOOP
 // ============================================================
 
+let markerFrameCounter = 0; // throttles Exterior/Interior marker position updates to every 2nd frame
+
 function animate(){
 
     requestAnimationFrame(animate);
-
     if(heart){
 
         if(rotationEnabled){
@@ -823,14 +968,27 @@ function animate(){
 
     }
 
+    updatePlatformPosition();
     animatePlatform();
     animateAmbientParticles();
 
     if(activeView === "overview"){
         updateOverviewMarkers();
     }
-    if(activeView === "interior"){
-        updateInteriorMarkers();
+
+    // Exterior/Interior markers are recalculated every 2nd frame instead of
+    // every frame (halves their per-frame cost) — the position change
+    // between two consecutive frames is sub-pixel, so this isn't visually
+    // noticeable, but it meaningfully reduces the work done while orbiting
+    // these high-resolution models.
+    markerFrameCounter++;
+    if(markerFrameCounter % 2 === 0){
+        if(activeView === "exterior"){
+            updateExteriorMarkers();
+        }
+        if(activeView === "interior"){
+            updateInteriorMarkers();
+        }
     }
 
     updateCameraTween();
@@ -938,9 +1096,9 @@ function clearHeart(){
     }
     selectableModel = null;
     clearOverviewMarkers();
+    clearExteriorMarkers();
     clearInteriorMarkers();
-    clearHighlight();
-    clearAnatomyDim();
+    removeHighlightSphere();
 }
 
 function cloneMaterial(mat){
@@ -959,7 +1117,27 @@ function cloneMaterial(mat){
 // with no part clipped off screen — no hardcoded positions.
 // ============================================================
 
-function computeAutoFraming(loaded, rig){
+// Overview's own camera framing (DEFAULT_FRAMING.overview) is the fixed,
+// hand-tuned reference this project already treats as "correct" — this
+// derives how it relates to the model's real geometry (what fraction of
+// the viewport it fills, and how far above true center the target/camera
+// are lifted, as a ratio of the model's half-height) so Exterior/Interior
+// can be scaled and angled to visually MATCH it, instead of using an
+// independently-guessed framing. Overview itself is never modified —
+// this only reads its existing constants.
+const OVERVIEW_HALF_HEIGHT = MODEL_TARGET_HEIGHT / 2;
+const OVERVIEW_TARGET_LIFT_RATIO = DEFAULT_FRAMING.overview.target.y / OVERVIEW_HALF_HEIGHT;
+const OVERVIEW_CAMERA_LIFT_RATIO =
+    (DEFAULT_FRAMING.overview.pos.y - DEFAULT_FRAMING.overview.target.y) / OVERVIEW_HALF_HEIGHT;
+
+// Captured the first time Overview loads (see loadModel) from Overview's
+// ACTUAL measured bounding sphere at its fixed camera distance, so
+// Exterior/Interior can target that same real on-screen fill fraction
+// instead of a guessed constant. Falls back to a sensible default only if
+// Exterior/Interior is somehow framed before Overview has ever loaded.
+let overviewFillFraction = 0.475;
+
+function computeAutoFraming(loaded, rig, fillFraction){
 
     rig.updateMatrixWorld(true);
 
@@ -970,9 +1148,10 @@ function computeAutoFraming(loaded, rig){
 
     const vFov = camera.fov * Math.PI / 180;
 
-    // Distance so the model's full diameter fills ~47.5% of the
-    // viewport height (comfortably inside the 45-50% target range).
-    const FILL_FRACTION = 0.475;
+    // Distance so the model's full diameter fills the requested fraction
+    // of the viewport height (Overview's own measured fraction, for
+    // Exterior/Interior — see loadModel).
+    const FILL_FRACTION = fillFraction || overviewFillFraction;
     let distance = radius / (FILL_FRACTION * Math.tan(vFov / 2));
 
     // Guard against a narrow/tall viewport clipping the sides: also make
@@ -987,9 +1166,20 @@ function computeAutoFraming(loaded, rig){
     // Keep the result within the orbit controls' allowed zoom range.
     distance = Math.min(Math.max(distance, DEFAULT_MIN_DISTANCE + 1), controls.maxDistance - 0.5);
 
-    const camPos = new THREE.Vector3(worldCenter.x, worldCenter.y, worldCenter.z + distance);
+    // Match Overview's camera angle: lift the target and camera above the
+    // model's true center by the same proportion (of this model's own
+    // half-height) that Overview's fixed framing uses, rather than
+    // pointing dead-level at the center — this is what makes Exterior/
+    // Interior's framing genuinely look like Overview's, not just
+    // same-size-but-flat.
+    const halfHeight = (MODEL_TARGET_HEIGHT / 2) * rig.scale.y;
+    const targetY = worldCenter.y + halfHeight * OVERVIEW_TARGET_LIFT_RATIO;
+    const camY = targetY + halfHeight * OVERVIEW_CAMERA_LIFT_RATIO;
 
-    return { pos: camPos, target: worldCenter.clone() };
+    const target = new THREE.Vector3(worldCenter.x, targetY, worldCenter.z);
+    const camPos = new THREE.Vector3(worldCenter.x, camY, worldCenter.z + distance);
+
+    return { pos: camPos, target: target };
 
 }
 
@@ -1023,12 +1213,9 @@ function loadModel(view, isInitial){
 
             const loaded = gltf.scene;
 
-            // Ensure materials can receive emissive highlight/dim edits later
-            loaded.traverse(function(child){
-                if(child.isMesh && child.material){
-                    child.material = cloneMaterial(child.material);
-                }
-            });
+            // Materials are used exactly as loaded from the GLB — nothing in
+            // this app ever modifies a heart material (no tint/glow/emissive/
+            // opacity edits), so there's no need to clone them per mesh here.
 
             // Every view (Overview / Exterior / Interior) goes through the SAME
             // centering + normalization pipeline, so all three heart models sit
@@ -1043,10 +1230,18 @@ function loadModel(view, isInitial){
             loaded.userData.rawCenter = center.clone();
             loaded.userData.rawHalfSize = size.clone().multiplyScalar(0.5);
 
-            loaded.position.sub(center);
-
             const norm = MODEL_TARGET_HEIGHT / (size.y || 1);
             loaded.scale.setScalar(norm);
+
+            // Scale-aware centering: a local point p maps to world position
+            // (loaded.position + norm * p), since scale is applied to the
+            // local geometry before the translation is added on top. So
+            // sending the box's real center to the origin on X, Y, AND Z
+            // requires position = -norm * center, not -center (setting
+            // position before scale left the true center off-origin by
+            // (norm - 1) * center, which is what fed the platform's
+            // gap-tracking math the wrong "center" to measure from).
+            loaded.position.copy(center).multiplyScalar(-norm);
 
             const rig = new THREE.Group();
             rig.position.set(HEART_X, 0, 0);
@@ -1066,25 +1261,32 @@ function loadModel(view, isInitial){
                 heart.scale.set(currentScale, currentScale, currentScale);
             }
 
-            heart.traverse(function(child){
-                if(child.isMesh && child.material){
-                    child.material.transparent = true;
-                    if(child.material.opacity === undefined) child.material.opacity = 1;
-                }
-            });
-
-            // fade the whole model in rather than popping it into view
-            heart.traverse(function(child){
-                if(child.isMesh && child.material) child.material.opacity = 0;
-            });
+            // Materials are left exactly as authored in the GLB — no forced
+            // transparency, no opacity fade-in, no glow/tint. The model is
+            // added to the scene as-is so it renders with its original
+            // embedded colors, textures, roughness and metalness.
             scene.add(heart);
-            fadeInModel(heart);
-            applyGlow(currentPatient.glow); // re-apply current patient's glow to the freshly loaded model
 
             activeView = view;
 
             if(view === "overview"){
                 buildOverviewMarkers();
+
+                // Overview's camera framing is fixed/unmodified — measure
+                // what fraction of the viewport it actually fills at that
+                // fixed distance, so Exterior/Interior (below) can be sized
+                // to match it exactly instead of guessing a fraction.
+                rig.updateMatrixWorld(true);
+                const ovBox = new THREE.Box3().setFromObject(loaded);
+                const ovSphere = ovBox.getBoundingSphere(new THREE.Sphere());
+                const ovDist = DEFAULT_FRAMING.overview.pos.distanceTo(DEFAULT_FRAMING.overview.target);
+                const ovVFov = camera.fov * Math.PI / 180;
+                const measuredFraction = ovSphere.radius / (ovDist * Math.tan(ovVFov / 2));
+                if(measuredFraction > 0.1 && measuredFraction < 0.9){
+                    overviewFillFraction = measuredFraction;
+                }
+            } else if(view === "exterior"){
+                buildExteriorMarkers(loaded);
             } else if(view === "interior"){
                 buildInteriorMarkers(loaded);
             }
@@ -1100,7 +1302,7 @@ function loadModel(view, isInitial){
             // always perfectly centered and fully visible regardless of
             // how each GLB's own geometry is authored.
             if(view === "exterior" || view === "interior"){
-                const auto = computeAutoFraming(loaded, heart);
+                const auto = computeAutoFraming(loaded, heart, overviewFillFraction);
                 DEFAULT_FRAMING[view].pos.copy(auto.pos);
                 DEFAULT_FRAMING[view].target.copy(auto.target);
             }
@@ -1123,25 +1325,6 @@ function loadModel(view, isInitial){
         }
 
     );
-
-}
-
-function fadeInModel(obj){
-
-    const t0 = performance.now();
-    const duration = 700;
-
-    function step(){
-        const t = Math.min((performance.now() - t0) / duration, 1);
-        obj.traverse(function(child){
-            if(child.isMesh && child.material){
-                child.material.opacity = t;
-            }
-        });
-        if(t < 1) requestAnimationFrame(step);
-    }
-
-    requestAnimationFrame(step);
 
 }
 
@@ -1258,6 +1441,134 @@ function updateOverviewMarkers(){
 }
 
 // ============================================================
+// EXTERIOR HEART — 13 NUMBERED CLINICAL HOTSPOTS
+// Same architecture as the Interior Heart hotspots below: anchors are
+// computed from the model's REAL bounding box at load time (not
+// hardcoded pixel guesses), projected every frame so the 2D DOM markers
+// always track the model and always face the camera. Clicking a number
+// zooms to that structure and fills the Heart Information panel —
+// without ever modifying the heart's own material/color.
+// ============================================================
+
+function buildExteriorMarkers(loadedModel){
+
+    clearExteriorMarkers();
+
+    const layer = document.getElementById("annotationLayer");
+    const center = loadedModel.userData.rawCenter;
+    const half = loadedModel.userData.rawHalfSize;
+
+    EXTERIOR_ANATOMY.forEach(function(item){
+
+        const anchor = new THREE.Vector3(
+            center.x + item.offset.x * half.x,
+            center.y + item.offset.y * half.y,
+            center.z + item.offset.z * half.z
+        );
+
+        const el = document.createElement("div");
+        el.className = "anatomy-marker numbered";
+        el.textContent = item.num;
+        el.title = item.title;
+
+        el.onclick = function(){
+            onExteriorHotspotClick(item, anchor, el);
+        };
+
+        layer.appendChild(el);
+        exteriorMarkerEls.push({ el: el, anchor: anchor, item: item });
+
+    });
+
+}
+
+function clearExteriorMarkers(){
+    exteriorMarkerEls.forEach(function(entry){ entry.el.remove(); });
+    exteriorMarkerEls = [];
+    selectedHotspotNum = null;
+}
+
+function updateExteriorMarkers(){
+
+    if(exteriorMarkerEls.length === 0 || !selectableModel) return;
+
+    const w = window.innerWidth, h = window.innerHeight;
+
+    exteriorMarkerEls.forEach(function(entry){
+
+        const worldPos = entry.anchor.clone();
+        selectableModel.localToWorld(worldPos);
+
+        const projected = worldPos.project(camera);
+        const behind = projected.z > 1;
+        const occluded = false; // occlusion raycasting removed for performance — see updateExteriorMarkers
+
+        const x = (projected.x * 0.5 + 0.5) * w;
+        const y = (-projected.y * 0.5 + 0.5) * h;
+
+        entry.el.style.left = (x - 16) + "px";
+        entry.el.style.top = (y - 16) + "px";
+        entry.el.style.display = behind ? "none" : "flex";
+
+    });
+
+}
+
+function onExteriorHotspotClick(item, anchorLocal, el){
+
+    // toggle off if clicking the already-selected hotspot
+    if(selectedHotspotNum === item.num){
+        resetExteriorSelection();
+        return;
+    }
+
+    selectedHotspotNum = item.num;
+
+    document.querySelectorAll(".anatomy-marker.numbered").forEach(function(m){
+        m.classList.remove("active");
+        m.classList.add("dimmed");
+    });
+    el.classList.add("active");
+    el.classList.remove("dimmed");
+
+    // Selection feedback is the marker's own CSS "active" state plus a
+    // standalone highlight sphere — the heart's own material is never
+    // touched (no dim, no emissive tint, no opacity change).
+    placeHighlightSphere(anchorLocal);
+
+    const worldAnchor = anchorLocal.clone();
+    selectableModel.localToWorld(worldAnchor);
+
+    controls.minDistance = HOTSPOT_MIN_DISTANCE; // allow the close-up tween below the normal floor
+
+    const camPos = worldAnchor.clone().add(new THREE.Vector3(0, 0.1, 2.4));
+    tweenCamera(camPos, worldAnchor, 900);
+
+    showAnatomyDetail(null, item);
+
+}
+
+function resetExteriorSelection(){
+
+    selectedHotspotNum = null;
+
+    document.querySelectorAll(".anatomy-marker.numbered").forEach(function(m){
+        m.classList.remove("active");
+        m.classList.remove("dimmed");
+    });
+
+    removeHighlightSphere();
+
+    controls.minDistance = DEFAULT_MIN_DISTANCE; // restore the normal orbit floor
+
+    const framing = DEFAULT_FRAMING.exterior;
+    tweenCamera(framing.pos, framing.target, 900);
+
+    hideAnatomyDetail();
+
+}
+
+// ============================================================
 // INTERIOR HEART — 13 NUMBERED CLINICAL HOTSPOTS
 // Anchors are computed from the model's REAL bounding box at load
 // time (loaded.userData.rawCenter / rawHalfSize), then projected
@@ -1340,14 +1651,14 @@ function updateInteriorMarkers(){
 
         const projected = worldPos.project(camera);
         const behind = projected.z > 1;
-        const occluded = !behind && isMarkerOccluded(worldPos);
+        const occluded = false; // occlusion raycasting removed for performance — see updateInteriorMarkers
 
         const x = (projected.x * 0.5 + 0.5) * w;
         const y = (-projected.y * 0.5 + 0.5) * h;
 
         entry.el.style.left = (x - 16) + "px";
         entry.el.style.top = (y - 16) + "px";
-        entry.el.style.display = (behind || occluded) ? "none" : "flex";
+        entry.el.style.display = behind ? "none" : "flex";
 
     });
 
@@ -1370,7 +1681,9 @@ function onInteriorHotspotClick(item, anchorLocal, el){
     el.classList.add("active");
     el.classList.remove("dimmed");
 
-    dimHeartExcept();
+    // Selection feedback is the marker's own CSS "active" state plus a
+    // standalone highlight sphere — the heart's own material is never
+    // touched (no dim, no emissive tint, no opacity change).
     placeHighlightSphere(anchorLocal);
 
     const worldAnchor = anchorLocal.clone();
@@ -1394,7 +1707,6 @@ function resetInteriorSelection(){
         m.classList.remove("dimmed");
     });
 
-    clearAnatomyDim();
     removeHighlightSphere();
 
     controls.minDistance = DEFAULT_MIN_DISTANCE; // restore the normal orbit floor
@@ -1410,45 +1722,23 @@ document.getElementById("closeAnatomyPanel").onclick = function(){
 
     if(activeView === "interior" && selectedHotspotNum !== null){
         resetInteriorSelection();
+    } else if(activeView === "exterior" && selectedHotspotNum !== null){
+        resetExteriorSelection();
     } else {
         document.querySelectorAll(".anatomy-marker").forEach(function(m){ m.classList.remove("active"); });
-        clearHighlight();
         hideAnatomyDetail();
     }
 
 };
 
 // ============================================================
-// DIM / HIGHLIGHT (interior hotspot selection)
+// HOTSPOT SELECTION MARKER
+// A small standalone cyan marker sphere pinpoints the selected anatomy
+// point. It is its own separate mesh/material — selecting a hotspot
+// NEVER touches the heart model's own materials (no dim, no emissive
+// highlight, no opacity change), so the heart keeps its original GLB
+// appearance at all times, including while a marker is active.
 // ============================================================
-
-function dimHeartExcept(){
-
-    clearAnatomyDim();
-
-    if(!selectableModel) return;
-
-    selectableModel.traverse(function(child){
-        if(child.isMesh && child.material){
-            dimmedMaterials.push({
-                material: child.material,
-                opacity: child.material.opacity
-            });
-            child.material.transparent = true;
-            child.material.opacity = 0.28;
-        }
-    });
-
-}
-
-function clearAnatomyDim(){
-
-    dimmedMaterials.forEach(function(entry){
-        entry.material.opacity = entry.opacity;
-    });
-    dimmedMaterials = [];
-
-}
 
 function placeHighlightSphere(anchorLocal){
 
@@ -1478,65 +1768,6 @@ function removeHighlightSphere(){
         highlightSphere.material.dispose();
         highlightSphere = null;
     }
-}
-
-// ============================================================
-// RAYCAST PART-SELECTION (Exterior heart only — real segmented
-// mesh materials verified against exteriorHeart.glb)
-// ============================================================
-
-function onSceneClick(event){
-
-    if(activeView !== "exterior" || !selectableModel) return;
-
-    const rect = renderer.domElement.getBoundingClientRect();
-
-    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(pointer, camera);
-
-    const hits = raycaster.intersectObject(selectableModel, true);
-
-    if(hits.length === 0) return;
-
-    const hitMesh = hits[0].object;
-    const matName = hitMesh.material && hitMesh.material.name;
-    const data = EXTERIOR_ANATOMY[matName];
-
-    if(data){
-        highlightMesh(hitMesh);
-        showAnatomyDetail(data, null);
-    }
-
-}
-
-function highlightMesh(mesh){
-
-    clearHighlight();
-
-    if(mesh.material && mesh.material.emissive){
-        highlightedOriginalEmissive = mesh.material.emissive.clone();
-        highlightedOriginalIntensity = mesh.material.emissiveIntensity || 1;
-        mesh.material.emissive.set(0x00d8ff);
-        mesh.material.emissiveIntensity = 1.3;
-    }
-
-    highlightedMesh = mesh;
-
-}
-
-function clearHighlight(){
-
-    if(highlightedMesh && highlightedMesh.material &&
-       highlightedMesh.material.emissive && highlightedOriginalEmissive){
-        highlightedMesh.material.emissive.copy(highlightedOriginalEmissive);
-        highlightedMesh.material.emissiveIntensity = highlightedOriginalIntensity;
-    }
-
-    highlightedMesh = null;
-    highlightedOriginalEmissive = null;
-
 }
 
 // ============================================================
@@ -1672,19 +1903,13 @@ function updateViewBadge(view){
 //  Recommendation, Status and Prediction live, no reload)
 // ============================================================
 
+// Intentionally a no-op. The heart must always render with its original,
+// unmodified GLB materials — no patient-specific tint/glow is ever applied
+// to it (the "glow" field on PATIENT_PROFILES is kept only so unrelated
+// dashboard code referencing cfg.glow doesn't break, but it no longer
+// does anything to the 3D model).
 function applyGlow(hexColor){
-
-    if(!heart) return;
-
-    const targetTree = selectableModel || heart;
-
-    targetTree.traverse(function(child){
-        if(child.isMesh && child.material && child.material.emissive){
-            child.material.emissive.setHex(hexColor);
-            child.material.emissiveIntensity = 0.35;
-        }
-    });
-
+    // no-op by design — do not add emissive/color logic here.
 }
 
 function selectPatient(cardId, key){
@@ -1779,11 +2004,41 @@ function updateSparkline(){
 
 let lastUpdateTime = Date.now();
 
+function pluralUnit(value, unit){
+    return value + " " + unit + (value === 1 ? "" : "s") + " ago";
+}
+
+function formatElapsed(seconds){
+
+    if(seconds < 60){
+        return seconds < 3 ? "Just now" : (seconds === 1 ? "1 sec ago" : seconds + " secs ago");
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    if(minutes < 60){
+        return minutes === 1 ? "1 min ago" : minutes + " mins ago";
+    }
+
+    const hours = Math.floor(minutes / 60);
+    if(hours < 24){
+        return hours === 1 ? "1 hr ago" : hours + " hrs ago";
+    }
+
+    const days = Math.floor(hours / 24);
+    if(days < 7){
+        return pluralUnit(days, "day");
+    }
+
+    const weeks = Math.floor(days / 7);
+    return pluralUnit(weeks, "week");
+
+}
+
 setInterval(function(){
     const seconds = Math.floor((Date.now() - lastUpdateTime) / 1000);
     const el = document.getElementById("statUpdate");
     if(!el) return;
-    el.textContent = seconds < 3 ? "Just now" : seconds + "s ago";
+    el.textContent = formatElapsed(seconds);
 }, 1000);
 
 // ============================================================
