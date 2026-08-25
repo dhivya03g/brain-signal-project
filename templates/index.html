@@ -771,7 +771,7 @@
 ================================================== -->
 
 <h2 class="section-title">
-    🫀 Heart Disease Prediction
+    🫀 Cardiac Abnormality Assessment
 </h2>
 
 
@@ -986,7 +986,7 @@
                 onclick="predictHeartDisease()"
             >
 
-                Predict Heart Disease
+                Assess Cardiac Abnormality Risk
 
             </button>
 
@@ -1007,11 +1007,11 @@
 
 
 <!-- ==================================================
-     HEART DISEASE RESULT
+     CARDIAC ABNORMALITY ASSESSMENT RESULT
 ================================================== -->
 
 <h2 class="section-title">
-    🧠 AI Heart Disease Assessment
+    🧠 AI Cardiac Abnormality Assessment
 </h2>
 
 
@@ -1021,7 +1021,7 @@
     <div class="risk-result-card">
 
         <h3>
-            Heart Disease Status
+            Cardiac Condition Status
         </h3>
 
         <div
@@ -1037,7 +1037,7 @@
     <div class="risk-result-card">
 
         <h3>
-            Disease Probability
+            Abnormality Probability
         </h3>
 
         <div
@@ -1053,23 +1053,7 @@
     <div class="risk-result-card">
 
         <h3>
-            Heart Disease Model Accuracy
-        </h3>
-
-        <div
-            class="value"
-            id="heartDiseaseAccuracy"
-        >
-            81.67%
-        </div>
-
-    </div>
-
-
-    <div class="risk-result-card">
-
-        <h3>
-            AI Prediction
+            Cardiac Assessment
         </h3>
 
         <div
@@ -1083,7 +1067,6 @@
 
 
 </div>
-
 
 
 <!-- ==================================================
@@ -1939,7 +1922,7 @@ async function predictHeartDisease(){
 
             throw new Error(
                 result.error ||
-                "Heart disease prediction failed"
+                "Cardiac abnormality assessment failed"
             );
 
         }
@@ -1952,19 +1935,7 @@ async function predictHeartDisease(){
             )
             .innerText =
 
-            result.disease_probability
-            +
-            "%";
-
-
-
-        document
-            .getElementById(
-                "heartDiseaseAccuracy"
-            )
-            .innerText =
-
-            result.model_accuracy
+            result.abnormality_probability
             +
             "%";
 
@@ -1992,7 +1963,7 @@ async function predictHeartDisease(){
         ){
 
             predictionElement.innerText =
-                "Disease Detected";
+                "Cardiac Abnormality Detected";
 
             predictionElement.className =
                 "value abnormal";
@@ -2005,7 +1976,7 @@ async function predictHeartDisease(){
         else{
 
             predictionElement.innerText =
-                "No Disease Detected";
+                "No Significant Cardiac Abnormality Detected";
 
             predictionElement.className =
                 "value normal";
@@ -2022,7 +1993,7 @@ async function predictHeartDisease(){
 
 
         console.error(
-            "Heart Disease Error:",
+            "Cardiac Abnormality Error:",
             error
         );
 
