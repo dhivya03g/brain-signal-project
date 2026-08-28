@@ -802,10 +802,473 @@ def predict_cardiac_risk(data):
 
     try:
 
-        input_data = pd.DataFrame(
-            [data]
+        # ----------------------------------------------------
+        # GET AGE
+        # ----------------------------------------------------
+
+        age = float(
+            data.get(
+                "age_years",
+                data.get(
+                    "age",
+                    0
+                )
+            )
         )
 
+
+        # ----------------------------------------------------
+        # GET HEIGHT
+        # ----------------------------------------------------
+
+        height = float(
+            data.get(
+                "height",
+                0
+            )
+        )
+
+
+        # ----------------------------------------------------
+        # GET WEIGHT
+        # ----------------------------------------------------
+
+        weight = float(
+            data.get(
+                "weight",
+                0
+            )
+        )
+
+
+        # ----------------------------------------------------
+        # GET BLOOD PRESSURE
+        # ----------------------------------------------------
+
+        ap_hi = float(
+            data.get(
+                "ap_hi",
+                data.get(
+                    "systolic_bp",
+                    0
+                )
+            )
+        )
+
+
+        ap_lo = float(
+            data.get(
+                "ap_lo",
+                data.get(
+                    "diastolic_bp",
+                    0
+                )
+            )
+        )
+
+
+        # ----------------------------------------------------
+        # VALIDATE HEIGHT AND WEIGHT
+        # ----------------------------------------------------
+
+        if height <= 0:
+
+            raise ValueError(
+                "Height must be greater than zero"
+            )
+
+
+        if weight <= 0:
+
+            raise ValueError(
+                "Weight must be greater than zero"
+            )
+
+
+        # ----------------------------------------------------
+        # CALCULATE BMI
+        # ----------------------------------------------------
+
+        height_m = (
+            height / 100.0
+        )
+
+        bmi = (
+            weight /
+            (height_m ** 2)
+        )
+
+
+        # ----------------------------------------------------
+        # GENDER
+        #
+        # Cardio dataset:
+        #
+        # 1 = Female
+        # 2 = Male
+        # ----------------------------------------------------
+
+        gender_value = data.get(
+            "gender",
+            1
+        )
+
+
+        if isinstance(
+            gender_value,
+            str
+        ):
+
+            gender_text = (
+                gender_value
+                .strip()
+                .lower()
+            )
+
+
+            if gender_text in [
+                "male",
+                "m",
+                "2"
+            ]:
+
+                gender_value = 2
+
+            else:
+
+                gender_value = 1
+
+        else:
+
+            gender_value = int(
+                gender_value
+            )
+
+
+        # ----------------------------------------------------
+        # CHOLESTEROL
+        #
+        # 1 = Normal
+        # 2 = Above Normal
+        # 3 = Well Above Normal
+        # ----------------------------------------------------
+
+        cholesterol_value = data.get(
+            "cholesterol",
+            1
+        )
+
+
+        if isinstance(
+            cholesterol_value,
+            str
+        ):
+
+            cholesterol_text = (
+                cholesterol_value
+                .strip()
+                .lower()
+            )
+
+
+            if cholesterol_text in [
+                "normal",
+                "1"
+            ]:
+
+                cholesterol_value = 1
+
+
+            elif cholesterol_text in [
+                "above normal",
+                "above_normal",
+                "2"
+            ]:
+
+                cholesterol_value = 2
+
+
+            elif cholesterol_text in [
+                "well above normal",
+                "well_above_normal",
+                "3"
+            ]:
+
+                cholesterol_value = 3
+
+
+            else:
+
+                cholesterol_value = 1
+
+        else:
+
+            cholesterol_value = int(
+                cholesterol_value
+            )
+
+
+        # ----------------------------------------------------
+        # BLOOD GLUCOSE
+        #
+        # 1 = Normal
+        # 2 = Above Normal
+        # 3 = Well Above Normal
+        # ----------------------------------------------------
+
+        gluc_value = data.get(
+            "gluc",
+            data.get(
+                "blood_glucose",
+                1
+            )
+        )
+
+
+        if isinstance(
+            gluc_value,
+            str
+        ):
+
+            gluc_text = (
+                gluc_value
+                .strip()
+                .lower()
+            )
+
+
+            if gluc_text in [
+                "normal",
+                "1"
+            ]:
+
+                gluc_value = 1
+
+
+            elif gluc_text in [
+                "above normal",
+                "above_normal",
+                "2"
+            ]:
+
+                gluc_value = 2
+
+
+            elif gluc_text in [
+                "well above normal",
+                "well_above_normal",
+                "3"
+            ]:
+
+                gluc_value = 3
+
+
+            else:
+
+                gluc_value = 1
+
+        else:
+
+            gluc_value = int(
+                gluc_value
+            )
+
+
+        # ----------------------------------------------------
+        # SMOKING
+        #
+        # 0 = No
+        # 1 = Yes
+        # ----------------------------------------------------
+
+        smoke_value = data.get(
+            "smoke",
+            data.get(
+                "smoking",
+                0
+            )
+        )
+
+
+        if isinstance(
+            smoke_value,
+            str
+        ):
+
+            smoke_value = (
+                1
+                if smoke_value
+                .strip()
+                .lower()
+                in [
+                    "yes",
+                    "true",
+                    "1",
+                    "smoker"
+                ]
+                else 0
+            )
+
+        else:
+
+            smoke_value = int(
+                smoke_value
+            )
+
+
+        # ----------------------------------------------------
+        # ALCOHOL
+        #
+        # 0 = No
+        # 1 = Yes
+        # ----------------------------------------------------
+
+        alco_value = data.get(
+            "alco",
+            data.get(
+                "alcohol",
+                0
+            )
+        )
+
+
+        if isinstance(
+            alco_value,
+            str
+        ):
+
+            alco_value = (
+                1
+                if alco_value
+                .strip()
+                .lower()
+                in [
+                    "yes",
+                    "true",
+                    "1",
+                    "alcohol"
+                ]
+                else 0
+            )
+
+        else:
+
+            alco_value = int(
+                alco_value
+            )
+
+
+        # ----------------------------------------------------
+        # PHYSICAL ACTIVITY
+        #
+        # 0 = No
+        # 1 = Yes
+        # ----------------------------------------------------
+
+        active_value = data.get(
+            "active",
+            data.get(
+                "physical_activity",
+                0
+            )
+        )
+
+
+        if isinstance(
+            active_value,
+            str
+        ):
+
+            active_value = (
+                1
+                if active_value
+                .strip()
+                .lower()
+                in [
+                    "yes",
+                    "true",
+                    "1",
+                    "active",
+                    "high"
+                ]
+                else 0
+            )
+
+        else:
+
+            active_value = int(
+                active_value
+            )
+
+
+        # ----------------------------------------------------
+        # CREATE EXACT MODEL INPUT
+        # ----------------------------------------------------
+
+        input_data = pd.DataFrame(
+
+            [[
+
+                age,
+
+                gender_value,
+
+                height,
+
+                weight,
+
+                bmi,
+
+                ap_hi,
+
+                ap_lo,
+
+                cholesterol_value,
+
+                gluc_value,
+
+                smoke_value,
+
+                alco_value,
+
+                active_value
+
+            ]],
+
+            columns=[
+
+                "age_years",
+
+                "gender",
+
+                "height",
+
+                "weight",
+
+                "bmi",
+
+                "ap_hi",
+
+                "ap_lo",
+
+                "cholesterol",
+
+                "gluc",
+
+                "smoke",
+
+                "alco",
+
+                "active"
+
+            ]
+
+        )
+
+
+        # ----------------------------------------------------
+        # ENSURE EXACT FEATURE ORDER
+        # ----------------------------------------------------
 
         if cardiac_risk_features is not None:
 
@@ -814,6 +1277,33 @@ def predict_cardiac_risk(data):
             ]
 
 
+        # ----------------------------------------------------
+        # PRINT INPUT FOR DEBUGGING
+        # ----------------------------------------------------
+
+        print(
+            "\n========================================"
+        )
+
+        print(
+            "CARDIAC RISK MODEL INPUT"
+        )
+
+        print(
+            input_data.to_string(
+                index=False
+            )
+        )
+
+        print(
+            "========================================\n"
+        )
+
+
+        # ----------------------------------------------------
+        # MODEL PREDICTION
+        # ----------------------------------------------------
+
         prediction = (
             cardiac_risk_model.predict(
                 input_data
@@ -821,23 +1311,83 @@ def predict_cardiac_risk(data):
         )
 
 
+        # ----------------------------------------------------
+        # MODEL PROBABILITY
+        # ----------------------------------------------------
+
         if hasattr(
             cardiac_risk_model,
             "predict_proba"
         ):
 
-            probability = (
+            probabilities = (
                 cardiac_risk_model
                 .predict_proba(
                     input_data
-                )[0][1]
-                * 100
+                )[0]
+            )
+
+
+            classes = (
+                cardiac_risk_model
+                .classes_
+            )
+
+
+            if 1 in classes:
+
+                positive_index = list(
+                    classes
+                ).index(1)
+
+
+                probability = (
+                    probabilities[
+                        positive_index
+                    ] * 100
+                )
+
+            else:
+
+                probability = (
+                    max(
+                        probabilities
+                    ) * 100
+                )
+
+        else:
+
+            probability = (
+
+                100.0
+
+                if int(prediction) == 1
+
+                else 0.0
+
+            )
+
+
+        # ----------------------------------------------------
+        # STATUS
+        # ----------------------------------------------------
+
+        if int(prediction) == 1:
+
+            status = (
+                "High Cardiac Risk"
             )
 
         else:
 
-            probability = 0
+            status = (
+                "Low Cardiac Risk"
+            )
 
+
+        # ----------------------------------------------------
+        # RETURN RESULT
+        # ----------------------------------------------------
 
         return {
 
@@ -846,15 +1396,21 @@ def predict_cardiac_risk(data):
 
             "probability":
                 round(
-                    float(probability),
+                    float(
+                        probability
+                    ),
                     2
                 ),
 
             "status":
-                (
-                    "High Cardiac Risk"
-                    if prediction == 1
-                    else "Low Cardiac Risk"
+                status,
+
+            "bmi":
+                round(
+                    float(
+                        bmi
+                    ),
+                    2
                 )
 
         }
@@ -863,8 +1419,19 @@ def predict_cardiac_risk(data):
     except Exception as e:
 
         print(
-            "Cardiac Risk Prediction Error:",
-            e
+            "\n========================================"
+        )
+
+        print(
+            "Cardiac Risk Prediction Error:"
+        )
+
+        print(
+            str(e)
+        )
+
+        print(
+            "========================================\n"
         )
 
         return None

@@ -27,6 +27,175 @@ href="/static/style.css">
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
+
+<style>
+/* ============================================================
+   AI CARDIAC RISK DETECTION OVERLAY
+   Added feature - existing heart model code remains unchanged
+============================================================ */
+
+#aiRiskAlert {
+    position: fixed;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 360px;
+    padding: 18px 22px;
+    border: 1px solid rgba(255,77,77,0.8);
+    border-radius: 14px;
+    background: rgba(20,0,0,0.88);
+    box-shadow: 0 0 25px rgba(255,0,0,0.45);
+    z-index: 9999;
+    display: none;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+#aiRiskAlert.show {
+    display: block;
+    animation: alertAppear 0.4s ease-out;
+}
+
+@keyframes alertAppear {
+    from { opacity: 0; transform: translateX(-50%) translateY(-15px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+#aiRiskAlertTitle {
+    color: #ff4d4d;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#aiRiskAlertArea {
+    color: #ffffff;
+    font-size: 16px;
+    margin: 6px 0;
+}
+
+#aiRiskAlertDisease {
+    color: #ff9999;
+    font-size: 14px;
+    margin-top: 8px;
+}
+
+#aiRiskAlertLevel {
+    color: #ffcc00;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+#aiRiskAlertClose {
+    position: absolute;
+    right: 12px;
+    top: 8px;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 20px;
+}
+
+.ai-detected-marker {
+    position: fixed;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 3px solid #ff3333;
+    background: rgba(255,0,0,0.25);
+    box-shadow: 0 0 10px #ff3333, 0 0 25px #ff3333, 0 0 45px rgba(255,0,0,0.8);
+    z-index: 9998;
+    pointer-events: none;
+    display: none;
+    transform: translate(-50%, -50%);
+}
+
+.ai-detected-marker.active {
+    display: block;
+    animation: cardiacRiskBlink 0.7s infinite;
+}
+
+@keyframes cardiacRiskBlink {
+    0%,100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 0 0 10px #ff3333, 0 0 25px #ff3333, 0 0 45px rgba(255,0,0,0.8);
+    }
+    50% {
+        opacity: 0.25;
+        transform: translate(-50%, -50%) scale(1.35);
+        box-shadow: 0 0 25px #ff3333, 0 0 55px #ff3333, 0 0 90px rgba(255,0,0,0.9);
+    }
+}
+
+.ai-detected-marker::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    border: 2px solid rgba(255,77,77,0.7);
+    border-radius: 50%;
+    animation: warningPulse 1.2s infinite;
+}
+
+@keyframes warningPulse {
+    0% { transform: scale(0.7); opacity: 0.9; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
+
+#aiDetectedLabel {
+    position: fixed;
+    z-index: 9997;
+    display: none;
+    transform: translate(-50%, -100%);
+    margin-top: -30px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    background: rgba(80,0,0,0.92);
+    border: 1px solid #ff4d4d;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+#aiDetectedLabel.active {
+    display: block;
+}
+</style>
+
+
+<style>
+/* ============================================================
+   ADDITIVE AI 3D CARDIAC RISK MARKER
+   Existing code above is unchanged.
+============================================================ */
+
+#ai3DRiskLabel {
+    position: fixed;
+    z-index: 10000;
+    display: none;
+    transform: translate(-50%, -100%);
+    margin-top: -35px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: rgba(90, 0, 0, 0.95);
+    border: 1px solid #ff3333;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow:
+        0 0 10px rgba(255, 0, 0, 0.8),
+        0 0 25px rgba(255, 0, 0, 0.5);
+}
+
+#ai3DRiskLabel.active {
+    display: block;
+}
+</style>
+
 </head>
 <body>
 
@@ -34,6 +203,43 @@ href="/static/style.css">
 
 <!-- Screen-space anatomy hotspot markers (projected from 3D each frame) -->
 <div id="annotationLayer"></div>
+
+<!-- ============================================================
+     AI CARDIAC RISK DETECTION OVERLAY
+============================================================ -->
+
+<div id="aiRiskAlert">
+
+    <span id="aiRiskAlertClose">&times;</span>
+
+    <div id="aiRiskAlertTitle">
+        ⚠ CARDIAC RISK DETECTED
+    </div>
+
+    <div id="aiRiskAlertArea">
+        Affected Area: <strong id="aiRiskArea">--</strong>
+    </div>
+
+    <div id="aiRiskAlertDisease">
+        <span id="aiRiskDisease">--</span>
+    </div>
+
+    <div id="aiRiskAlertLevel">
+        Risk Level: <span id="aiRiskLevel">--</span>
+    </div>
+
+</div>
+
+<div id="aiDetectedMarker" class="ai-detected-marker"></div>
+
+<div id="aiDetectedLabel">⚠ RISK DETECTED</div>
+
+<!-- ============================================================
+     ADDITIVE 3D AI RISK LABEL
+============================================================ -->
+<div id="ai3DRiskLabel">⚠ AI RISK DETECTED</div>
+
+
 
 <!-- Model loading overlay (exterior/interior GLBs are 100MB+) -->
 <div id="modelLoader">
@@ -952,6 +1158,12 @@ let markerFrameCounter = 0; // throttles Exterior/Interior marker position updat
 function animate(){
 
     requestAnimationFrame(animate);
+
+    updateAIRiskMarker();
+
+    /* Additive: animate the actual 3D AI risk location */
+    animate3DAIRiskMarker();
+
     if(heart){
 
         if(rotationEnabled){
@@ -2052,6 +2264,841 @@ setInterval(function(){
 // any patient profile's real value).
 selectPatient("maleCard", "male");
 
+
+// ============================================================
+// AI CARDIAC RISK LOCATION DETECTION
+// Added feature. Existing 3D model/material code is not changed.
+// ============================================================
+
+let aiDetectedRegion = null;
+let aiDetectedAnchor = null;
+let aiDetectedView = null;
+let aiRiskActive = false;
+
+/* ============================================================
+   ADDITIVE 3D AI RISK MARKER STATE
+   Existing AI risk variables remain unchanged.
+============================================================ */
+
+let ai3DRiskGroup = null;
+let ai3DRiskCore = null;
+let ai3DRiskRing1 = null;
+let ai3DRiskRing2 = null;
+let ai3DRiskRing3 = null;
+let ai3DRiskLight = null;
+let ai3DRiskLabel = null;
+let ai3DRiskNotificationPermissionRequested = false;
+
+
+function getAnatomyByKey(key) {
+    if (!key) return null;
+
+    key = String(key).toUpperCase();
+
+    if (OVERVIEW_ANATOMY[key]) {
+        return OVERVIEW_ANATOMY[key];
+    }
+
+    const exterior = EXTERIOR_ANATOMY.find(item => item.key === key);
+    if (exterior) return exterior;
+
+    const interior = INTERIOR_ANATOMY.find(item => item.key === key);
+    if (interior) return interior;
+
+    return null;
+}
+
+function findRiskAnchor(key) {
+    if (!selectableModel || !key) return null;
+
+    key = String(key).toUpperCase();
+
+    if (activeView === "overview") {
+        const marker = OVERVIEW_MARKER_POINTS.find(item => item.key === key);
+        if (marker) return marker.pos.clone();
+    }
+
+    if (activeView === "exterior") {
+        const marker = exteriorMarkerEls.find(item => item.item.key === key);
+        if (marker) return marker.anchor.clone();
+    }
+
+    if (activeView === "interior") {
+        const marker = interiorMarkerEls.find(item => item.item.key === key);
+        if (marker) return marker.anchor.clone();
+    }
+
+    return null;
+}
+
+function showAIRiskAlert(regionKey, diseaseName, riskLevel) {
+    const anatomy = getAnatomyByKey(regionKey);
+
+    const title =
+        anatomy?.title ||
+        regionKey ||
+        "Unknown Cardiac Region";
+
+    const disease =
+        diseaseName ||
+        anatomy?.disease ||
+        anatomy?.diseases ||
+        "Cardiac abnormality detected";
+
+    document.getElementById("aiRiskArea").textContent = title;
+    document.getElementById("aiRiskDisease").textContent = disease;
+    document.getElementById("aiRiskLevel").textContent =
+        riskLevel || "High Risk";
+
+    document.getElementById("aiRiskAlert").classList.add("show");
+    aiRiskActive = true;
+}
+
+function hideAIRiskAlert() {
+
+    document
+        .getElementById("aiRiskAlert")
+        .classList.remove("show");
+
+    document
+        .getElementById("aiDetectedMarker")
+        .classList.remove("active");
+
+    document
+        .getElementById("aiDetectedLabel")
+        .classList.remove("active");
+
+    const marker =
+        document.getElementById(
+            "aiDetectedMarker"
+        );
+
+    const label =
+        document.getElementById(
+            "aiDetectedLabel"
+        );
+
+    marker.style.display = "none";
+    label.style.display = "none";
+
+    /* Additive: remove actual 3D risk indicator */
+    remove3DAIRiskMarker();
+
+    aiRiskActive = false;
+    aiDetectedRegion = null;
+    aiDetectedAnchor = null;
+    aiDetectedView = null;
+
+    if (controls) {
+        controls.minDistance =
+            DEFAULT_MIN_DISTANCE;
+    }
+}
+
+document.getElementById("aiRiskAlertClose").onclick = function () {
+    hideAIRiskAlert();
+};
+
+
+/* ============================================================
+   ADDITIVE 3D AI RISK MARKER
+   The marker is attached directly to selectableModel, so it follows
+   the detected cardiac anatomy during rotation, zoom and scaling.
+============================================================ */
+
+function create3DAIRiskMarker() {
+
+    remove3DAIRiskMarker();
+
+    if (!selectableModel) return;
+
+    ai3DRiskGroup = new THREE.Group();
+
+    /* Central 3D risk point */
+    ai3DRiskCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.075, 32, 32),
+        new THREE.MeshBasicMaterial({
+            color: 0xff2222,
+            transparent: true,
+            opacity: 1,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+    );
+
+    ai3DRiskGroup.add(ai3DRiskCore);
+
+    /* Inner pulse ring */
+    ai3DRiskRing1 = new THREE.Mesh(
+        new THREE.RingGeometry(0.10, 0.125, 48),
+        new THREE.MeshBasicMaterial({
+            color: 0xff3333,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+    );
+
+    ai3DRiskRing1.rotation.x = Math.PI / 2;
+    ai3DRiskGroup.add(ai3DRiskRing1);
+
+    /* Middle pulse ring */
+    ai3DRiskRing2 = new THREE.Mesh(
+        new THREE.RingGeometry(0.16, 0.18, 48),
+        new THREE.MeshBasicMaterial({
+            color: 0xff4444,
+            transparent: true,
+            opacity: 0.65,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+    );
+
+    ai3DRiskRing2.rotation.x = Math.PI / 2;
+    ai3DRiskGroup.add(ai3DRiskRing2);
+
+    /* Outer pulse ring */
+    ai3DRiskRing3 = new THREE.Mesh(
+        new THREE.RingGeometry(0.23, 0.245, 48),
+        new THREE.MeshBasicMaterial({
+            color: 0xff5555,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        })
+    );
+
+    ai3DRiskRing3.rotation.x = Math.PI / 2;
+    ai3DRiskGroup.add(ai3DRiskRing3);
+
+    /* Small red light around the detected area */
+    ai3DRiskLight = new THREE.PointLight(0xff2222, 2.5, 1.2);
+    ai3DRiskGroup.add(ai3DRiskLight);
+
+    /* Attach directly to the loaded 3D heart */
+    selectableModel.add(ai3DRiskGroup);
+
+    ai3DRiskGroup.visible = true;
+
+    if (!ai3DRiskLabel) {
+        ai3DRiskLabel = document.getElementById("ai3DRiskLabel");
+    }
+
+    if (ai3DRiskLabel) {
+        ai3DRiskLabel.classList.add("active");
+    }
+}
+
+function remove3DAIRiskMarker() {
+
+    if (ai3DRiskGroup) {
+
+        if (selectableModel) {
+            selectableModel.remove(ai3DRiskGroup);
+        }
+
+        ai3DRiskGroup.traverse(function(child) {
+
+            if (child.geometry) {
+                child.geometry.dispose();
+            }
+
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(function(mat) {
+                        mat.dispose();
+                    });
+                } else {
+                    child.material.dispose();
+                }
+            }
+
+        });
+
+        ai3DRiskGroup = null;
+        ai3DRiskCore = null;
+        ai3DRiskRing1 = null;
+        ai3DRiskRing2 = null;
+        ai3DRiskRing3 = null;
+        ai3DRiskLight = null;
+    }
+
+    if (!ai3DRiskLabel) {
+        ai3DRiskLabel = document.getElementById("ai3DRiskLabel");
+    }
+
+    if (ai3DRiskLabel) {
+        ai3DRiskLabel.classList.remove("active");
+        ai3DRiskLabel.style.display = "none";
+    }
+}
+
+/* ============================================================
+   ADDITIVE AI RISK NOTIFICATION
+   Uses the browser's notification system when permission is granted.
+   It does not replace the existing in-page risk alert.
+============================================================ */
+
+function requestAIRiskNotificationPermission() {
+
+    if (!("Notification" in window)) {
+        return;
+    }
+
+    if (Notification.permission === "default") {
+
+        ai3DRiskNotificationPermissionRequested = true;
+
+        Notification.requestPermission().then(function(permission) {
+            console.log("AI risk notification permission:", permission);
+        }).catch(function(error) {
+            console.warn("Notification permission request failed:", error);
+        });
+    }
+}
+
+function sendAIRiskNotification(regionKey, diseaseName, riskLevel) {
+
+    if (!("Notification" in window)) {
+        console.warn("Browser notifications are not supported.");
+        return;
+    }
+
+    const anatomy = getAnatomyByKey(regionKey);
+
+    const area =
+        anatomy?.title ||
+        regionKey ||
+        "Cardiac Region";
+
+    const disease =
+        diseaseName ||
+        anatomy?.disease ||
+        anatomy?.diseases ||
+        "Cardiac abnormality detected";
+
+    const level =
+        riskLevel ||
+        "High Risk";
+
+    if (Notification.permission === "granted") {
+
+        try {
+
+            const notification = new Notification(
+                "⚠ CARDIAC RISK DETECTED",
+                {
+                    body:
+                        "Area: " + area +
+                        "\nCondition: " + disease +
+                        "\nRisk Level: " + level,
+                    tag: "cardiac-ai-risk",
+                    requireInteraction: true
+                }
+            );
+
+            notification.onclick = function() {
+                window.focus();
+                notification.close();
+            };
+
+        } catch (error) {
+            console.warn("Unable to create browser notification:", error);
+        }
+
+    } else if (Notification.permission === "default") {
+
+        requestAIRiskNotificationPermission();
+
+    } else {
+
+        console.warn(
+            "AI risk notification permission is blocked in the browser."
+        );
+    }
+}
+
+/* ============================================================
+   ADDITIVE 3D RISK ANIMATION
+============================================================ */
+
+function animate3DAIRiskMarker() {
+
+    if (
+        !aiRiskActive ||
+        !ai3DRiskGroup ||
+        !ai3DRiskCore
+    ) {
+        return;
+    }
+
+    const t = performance.now() * 0.005;
+
+    /* Fast blink */
+    const blink =
+        0.35 +
+        (Math.sin(t * 2.8) + 1) * 0.325;
+
+    /* Main expanding pulse */
+    const pulse =
+        1 +
+        (Math.sin(t * 1.8) + 1) * 0.45;
+
+    ai3DRiskCore.material.opacity = blink;
+
+    ai3DRiskCore.scale.set(
+        pulse,
+        pulse,
+        pulse
+    );
+
+    /* Inner ring */
+    if (ai3DRiskRing1) {
+
+        const s1 =
+            1 +
+            (Math.sin(t * 2.2) + 1) * 0.25;
+
+        ai3DRiskRing1.scale.set(
+            s1,
+            s1,
+            s1
+        );
+
+        ai3DRiskRing1.material.opacity =
+            0.35 + blink * 0.55;
+    }
+
+    /* Middle ring */
+    if (ai3DRiskRing2) {
+
+        const s2 =
+            1 +
+            (Math.sin(t * 1.7 + 1) + 1) * 0.5;
+
+        ai3DRiskRing2.scale.set(
+            s2,
+            s2,
+            s2
+        );
+
+        ai3DRiskRing2.material.opacity =
+            Math.max(
+                0.08,
+                0.7 - (s2 - 1) * 0.35
+            );
+    }
+
+    /* Outer ring */
+    if (ai3DRiskRing3) {
+
+        const s3 =
+            1 +
+            (Math.sin(t * 1.3 + 2) + 1) * 0.8;
+
+        ai3DRiskRing3.scale.set(
+            s3,
+            s3,
+            s3
+        );
+
+        ai3DRiskRing3.material.opacity =
+            Math.max(
+                0.03,
+                0.48 - (s3 - 1) * 0.22
+            );
+    }
+
+    /* Pulsing red light */
+    if (ai3DRiskLight) {
+
+        ai3DRiskLight.intensity =
+            1.5 +
+            (Math.sin(t * 2.5) + 1) * 2;
+    }
+
+    /* Rotating rings */
+    if (ai3DRiskRing1) {
+        ai3DRiskRing1.rotation.z += 0.025;
+    }
+
+    if (ai3DRiskRing2) {
+        ai3DRiskRing2.rotation.z -= 0.018;
+    }
+
+    if (ai3DRiskRing3) {
+        ai3DRiskRing3.rotation.z += 0.012;
+    }
+
+    update3DRiskLabel();
+}
+
+function update3DRiskLabel() {
+
+    if (
+        !aiRiskActive ||
+        !ai3DRiskGroup ||
+        !camera
+    ) {
+        return;
+    }
+
+    if (!ai3DRiskLabel) {
+        ai3DRiskLabel =
+            document.getElementById("ai3DRiskLabel");
+    }
+
+    if (!ai3DRiskLabel) {
+        return;
+    }
+
+    const worldPosition =
+        new THREE.Vector3();
+
+    ai3DRiskGroup.getWorldPosition(
+        worldPosition
+    );
+
+    const projected =
+        worldPosition.project(camera);
+
+    if (
+        projected.z > 1 ||
+        projected.x < -1.2 ||
+        projected.x > 1.2 ||
+        projected.y < -1.2 ||
+        projected.y > 1.2
+    ) {
+
+        ai3DRiskLabel.style.display = "none";
+        return;
+    }
+
+    const x =
+        (projected.x * 0.5 + 0.5) *
+        window.innerWidth;
+
+    const y =
+        (-projected.y * 0.5 + 0.5) *
+        window.innerHeight;
+
+    ai3DRiskLabel.style.left =
+        x + "px";
+
+    ai3DRiskLabel.style.top =
+        y + "px";
+
+    ai3DRiskLabel.style.display =
+        "block";
+}
+
+/* ============================================================
+   ADDITIVE AI CONNECTION HELPER
+   Call this from the result returned by your Python/Flask AI model.
+============================================================ */
+
+function handleAIRiskPrediction(result) {
+
+    if (!result) {
+        console.warn("AI prediction result is empty.");
+        return;
+    }
+
+    const risk =
+        result.risk === true ||
+        result.risk === "true" ||
+        result.prediction === "RISK" ||
+        result.prediction === "HIGH RISK";
+
+    if (!risk) {
+
+        hideAIRiskAlert();
+        return;
+    }
+
+    const region =
+        result.region ||
+        result.area ||
+        result.cardiac_region ||
+        result.affected_area;
+
+    const disease =
+        result.disease ||
+        result.condition ||
+        result.diagnosis ||
+        "Cardiac abnormality detected";
+
+    const riskLevel =
+        result.risk_level ||
+        result.riskLevel ||
+        result.level ||
+        "High Risk";
+
+    if (!region) {
+        console.warn(
+            "AI predicted a risk but did not provide a cardiac region."
+        );
+
+        showAIRiskAlert(
+            "Unknown",
+            disease,
+            riskLevel
+        );
+
+        sendAIRiskNotification(
+            "Unknown",
+            disease,
+            riskLevel
+        );
+
+        return;
+    }
+
+    /* Existing risk-location system handles the 3D anatomy selection */
+    showDetectedCardiacLocation(
+        region,
+        disease,
+        riskLevel
+    );
+
+    /* Browser notification */
+    sendAIRiskNotification(
+        region,
+        disease,
+        riskLevel
+    );
+}
+
+
+function showDetectedCardiacLocation(regionKey, diseaseName, riskLevel) {
+    if (!regionKey) return;
+
+    aiDetectedRegion = String(regionKey).toUpperCase();
+
+    showAIRiskAlert(
+        aiDetectedRegion,
+        diseaseName,
+        riskLevel
+    );
+
+    aiDetectedAnchor = findRiskAnchor(aiDetectedRegion);
+
+    if (aiDetectedAnchor) {
+        activateRiskMarker();
+        return;
+    }
+
+    const interiorKeys = INTERIOR_ANATOMY.map(item => item.key);
+
+    if (interiorKeys.includes(aiDetectedRegion)) {
+        aiDetectedView = "interior";
+        loadModel("interior");
+        waitForRiskLocation();
+        return;
+    }
+
+    const exteriorKeys = EXTERIOR_ANATOMY.map(item => item.key);
+
+    if (exteriorKeys.includes(aiDetectedRegion)) {
+        aiDetectedView = "exterior";
+        loadModel("exterior");
+        waitForRiskLocation();
+        return;
+    }
+
+    const overviewKeys = OVERVIEW_MARKER_POINTS.map(item => item.key);
+
+    if (overviewKeys.includes(aiDetectedRegion)) {
+        aiDetectedView = "overview";
+        loadModel("overview");
+        waitForRiskLocation();
+        return;
+    }
+
+    console.warn("Unknown cardiac region:", aiDetectedRegion);
+}
+
+function waitForRiskLocation() {
+    let attempts = 0;
+
+    const timer = setInterval(function () {
+        attempts++;
+
+        if (
+            selectableModel &&
+            activeView === aiDetectedView
+        ) {
+            aiDetectedAnchor =
+                findRiskAnchor(aiDetectedRegion);
+
+            if (aiDetectedAnchor) {
+                clearInterval(timer);
+                activateRiskMarker();
+                return;
+            }
+        }
+
+        if (attempts > 100) {
+            clearInterval(timer);
+
+            console.warn(
+                "Unable to locate cardiac region:",
+                aiDetectedRegion
+            );
+        }
+
+    }, 100);
+}
+
+function activateRiskMarker() {
+
+    if (
+        !aiDetectedAnchor ||
+        !selectableModel
+    ) {
+        return;
+    }
+
+    aiRiskActive = true;
+
+    /*
+     * Existing screen marker is still supported by the original code,
+     * but the new 3D marker is now the primary anatomical indicator.
+     */
+    create3DAIRiskMarker();
+
+    if (ai3DRiskGroup) {
+        ai3DRiskGroup.position.copy(
+            aiDetectedAnchor
+        );
+    }
+
+    const worldAnchor =
+        aiDetectedAnchor.clone();
+
+    selectableModel.localToWorld(
+        worldAnchor
+    );
+
+    controls.minDistance =
+        HOTSPOT_MIN_DISTANCE;
+
+    const camPos =
+        worldAnchor.clone().add(
+            new THREE.Vector3(
+                0,
+                0.1,
+                2.4
+            )
+        );
+
+    tweenCamera(
+        camPos,
+        worldAnchor,
+        1000
+    );
+
+    /*
+     * Hide the original 2D marker so the 3D marker is not duplicated.
+     */
+    const oldMarker =
+        document.getElementById(
+            "aiDetectedMarker"
+        );
+
+    const oldLabel =
+        document.getElementById(
+            "aiDetectedLabel"
+        );
+
+    if (oldMarker) {
+        oldMarker.classList.remove("active");
+        oldMarker.style.display = "none";
+    }
+
+    if (oldLabel) {
+        oldLabel.classList.remove("active");
+        oldLabel.style.display = "none";
+    }
+}
+
+function updateAIRiskMarker() {
+    if (
+        !aiRiskActive ||
+        !aiDetectedAnchor ||
+        !selectableModel ||
+        !camera
+    ) {
+        return;
+    }
+
+    const worldPos = aiDetectedAnchor.clone();
+
+    selectableModel.localToWorld(worldPos);
+
+    const projected = worldPos.project(camera);
+
+    const x =
+        (projected.x * 0.5 + 0.5) *
+        window.innerWidth;
+
+    const y =
+        (-projected.y * 0.5 + 0.5) *
+        window.innerHeight;
+
+    const marker =
+        document.getElementById(
+            "aiDetectedMarker"
+        );
+
+    const label =
+        document.getElementById(
+            "aiDetectedLabel"
+        );
+
+    marker.style.left = x + "px";
+    marker.style.top = y + "px";
+
+    label.style.left = x + "px";
+    label.style.top = y + "px";
+
+    if (projected.z > 1) {
+        marker.style.display = "none";
+        label.style.display = "none";
+    } else {
+        marker.style.display = "block";
+        label.style.display = "block";
+    }
+}
+
+
+/* ============================================================
+   ADDITIVE INITIALIZATION
+============================================================ */
+
+ai3DRiskLabel =
+    document.getElementById("ai3DRiskLabel");
+
+/*
+ * Permission is requested only when the user has not decided yet.
+ * Browsers may require this to be triggered by user interaction;
+ * the actual risk notification function also retries permission
+ * when needed.
+ */
+if (
+    "Notification" in window &&
+    Notification.permission === "default"
+) {
+    console.log(
+        "AI risk notifications are available. Permission will be requested when needed."
+    );
+}
+
 try {
     init();
     animate();
@@ -2066,7 +3113,966 @@ try {
 }
 
 
+
+/* ============================================================
+   ADDITIVE MULTI-REGION AI CARDIAC RISK VISUALIZATION
+   ------------------------------------------------------------
+   This block is ADDED after the existing code.
+   It does not remove or modify the existing heart models,
+   anatomy data, patient cards, camera system, or dashboard.
+
+   Supports:
+     { risk:true, region:"LV", disease:"...", risk_level:"High Risk" }
+
+   AND multiple regions:
+     {
+       risk:true,
+       regions:["LV","RA","AORTA","CORO_ART"],
+       disease:"Cardiac abnormality detected",
+       risk_level:"High Risk"
+     }
+
+   The markers are attached to the currently loaded 3D heart model,
+   use depthTest:false so they remain visible over the heart, and
+   blink independently at every detected cardiac location.
+============================================================ */
+
+let aiMultiRiskMarkers = [];
+let aiMultiRiskLabels = [];
+let aiMultiRiskRegions = [];
+let aiMultiRiskData = [];
+
+/* Return every region supplied by the AI/backend. */
+function getAIRiskRegions(result) {
+
+    if (!result) return [];
+
+    let raw = [];
+
+    if (Array.isArray(result.regions)) {
+        raw = result.regions;
+    } else if (Array.isArray(result.affected_regions)) {
+        raw = result.affected_regions;
+    } else if (Array.isArray(result.affectedAreas)) {
+        raw = result.affectedAreas;
+    } else if (Array.isArray(result.areas)) {
+        raw = result.areas;
+    } else if (result.region) {
+        raw = String(result.region).split(",");
+    } else if (result.area) {
+        raw = String(result.area).split(",");
+    } else if (result.cardiac_region) {
+        raw = String(result.cardiac_region).split(",");
+    } else if (result.affected_area) {
+        raw = String(result.affected_area).split(",");
+    }
+
+    return raw
+        .flatMap(function (item) {
+            if (typeof item === "string") return item.split(",");
+            if (item && typeof item === "object") {
+                return [
+                    item.key ||
+                    item.region ||
+                    item.area ||
+                    item.name ||
+                    item.cardiac_region
+                ];
+            }
+            return [];
+        })
+        .filter(Boolean)
+        .map(function (item) {
+            return String(item).trim().toUpperCase();
+        })
+        .filter(function (item, index, arr) {
+            return arr.indexOf(item) === index;
+        });
+}
+
+/* Find a usable anatomy anchor in the currently loaded model. */
+function findMultiRiskAnchor(regionKey) {
+
+    if (!selectableModel || !regionKey) return null;
+
+    const key = String(regionKey).toUpperCase();
+
+    if (activeView === "overview") {
+        const marker = OVERVIEW_MARKER_POINTS.find(function (item) {
+            return item.key === key;
+        });
+        if (marker) return marker.pos.clone();
+    }
+
+    if (activeView === "exterior") {
+        const marker = exteriorMarkerEls.find(function (item) {
+            return item.item && item.item.key === key;
+        });
+        if (marker) return marker.anchor.clone();
+    }
+
+    if (activeView === "interior") {
+        const marker = interiorMarkerEls.find(function (item) {
+            return item.item && item.item.key === key;
+        });
+        if (marker) return marker.anchor.clone();
+    }
+
+    return null;
+}
+
+/*
+ * Choose the best view for multiple cardiac locations.
+ *
+ * Exterior contains the broadest set of external structures.
+ * Interior contains valves and internal structures.
+ * Overview contains the six main chamber/vessel points.
+ *
+ * If all requested regions are available in the current view, no model
+ * reload is performed. Otherwise a suitable view is loaded.
+ */
+function chooseAIRiskView(regions) {
+
+    if (!regions || regions.length === 0) return activeView || "overview";
+
+    const exteriorKeys = EXTERIOR_ANATOMY.map(function (item) {
+        return item.key;
+    });
+
+    const interiorKeys = INTERIOR_ANATOMY.map(function (item) {
+        return item.key;
+    });
+
+    const overviewKeys = OVERVIEW_MARKER_POINTS.map(function (item) {
+        return item.key;
+    });
+
+    const currentKeys =
+        activeView === "exterior" ? exteriorKeys :
+        activeView === "interior" ? interiorKeys :
+        overviewKeys;
+
+    if (regions.every(function (key) {
+        return currentKeys.includes(key);
+    })) {
+        return activeView;
+    }
+
+    /* Exterior is preferred when it can display all requested locations. */
+    if (regions.every(function (key) {
+        return exteriorKeys.includes(key);
+    })) {
+        return "exterior";
+    }
+
+    /* Otherwise use Interior when it contains all locations. */
+    if (regions.every(function (key) {
+        return interiorKeys.includes(key);
+    })) {
+        return "interior";
+    }
+
+    /* Otherwise Overview if possible. */
+    if (regions.every(function (key) {
+        return overviewKeys.includes(key);
+    })) {
+        return "overview";
+    }
+
+    /*
+     * Mixed structures: choose Exterior when possible because it provides
+     * the widest coverage. Any region that has no anchor in that model
+     * will still be reported in the alert/notification.
+     */
+    return "exterior";
+}
+
+/* Create one independent blinking marker for one cardiac region. */
+function createSingleMultiRiskMarker(regionKey, index) {
+
+    if (!selectableModel) return null;
+
+    const anchor = findMultiRiskAnchor(regionKey);
+    if (!anchor) return null;
+
+    const group = new THREE.Group();
+
+    const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.075, 32, 32),
+        new THREE.MeshBasicMaterial({
+            color: 0xff1111,
+            transparent: true,
+            opacity: 1,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: false
+        })
+    );
+
+    const ring1 = new THREE.Mesh(
+        new THREE.RingGeometry(0.10, 0.125, 48),
+        new THREE.MeshBasicMaterial({
+            color: 0xff2222,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: false
+        })
+    );
+
+    const ring2 = new THREE.Mesh(
+        new THREE.RingGeometry(0.17, 0.19, 48),
+        new THREE.MeshBasicMaterial({
+            color: 0xff3333,
+            transparent: true,
+            opacity: 0.65,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: false
+        })
+    );
+
+    const ring3 = new THREE.Mesh(
+        new THREE.RingGeometry(0.24, 0.255, 48),
+        new THREE.MeshBasicMaterial({
+            color: 0xff4444,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: false
+        })
+    );
+
+    ring1.rotation.x = Math.PI / 2;
+    ring2.rotation.x = Math.PI / 2;
+    ring3.rotation.x = Math.PI / 2;
+
+    group.add(core);
+    group.add(ring1);
+    group.add(ring2);
+    group.add(ring3);
+
+    group.position.copy(anchor);
+    group.renderOrder = 9999;
+
+    group.traverse(function (child) {
+        child.renderOrder = 9999;
+    });
+
+    selectableModel.add(group);
+
+    return {
+        region: regionKey,
+        anchor: anchor,
+        group: group,
+        core: core,
+        ring1: ring1,
+        ring2: ring2,
+        ring3: ring3,
+        phase: index * 0.8 + Math.random() * 0.5
+    };
+}
+
+/* Remove every additive multi-region marker and its labels. */
+function removeAllMultiRiskMarkers() {
+
+    aiMultiRiskMarkers.forEach(function (marker) {
+
+        if (marker.group && marker.group.parent) {
+            marker.group.parent.remove(marker.group);
+        }
+
+        [
+            marker.core,
+            marker.ring1,
+            marker.ring2,
+            marker.ring3
+        ].forEach(function (mesh) {
+            if (!mesh) return;
+            if (mesh.geometry) mesh.geometry.dispose();
+            if (mesh.material) mesh.material.dispose();
+        });
+    });
+
+    aiMultiRiskMarkers = [];
+
+    aiMultiRiskLabels.forEach(function (label) {
+        if (label && label.parentNode) {
+            label.parentNode.removeChild(label);
+        }
+    });
+
+    aiMultiRiskLabels = [];
+}
+
+/* Create a small label for each detected location. */
+function createMultiRiskLabel(regionKey, data) {
+
+    const anatomy = getAnatomyByKey(regionKey);
+
+    const title =
+        anatomy?.title ||
+        regionKey;
+
+    const disease =
+        data?.disease ||
+        data?.condition ||
+        data?.diagnosis ||
+        "Cardiac risk detected";
+
+    const label = document.createElement("div");
+
+    label.className = "aiMultiRiskLabel";
+    label.textContent = "⚠ " + title;
+
+    label.title = disease;
+
+    label.style.cssText = `
+        position: fixed;
+        z-index: 10001;
+        display: none;
+        transform: translate(-50%, -100%);
+        margin-top: -25px;
+        padding: 6px 10px;
+        border-radius: 7px;
+        background: rgba(80,0,0,0.95);
+        border: 1px solid #ff3333;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: bold;
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 0 12px rgba(255,0,0,0.75);
+    `;
+
+    document.body.appendChild(label);
+    aiMultiRiskLabels.push(label);
+
+    return label;
+}
+
+/*
+ * Show all detected risk regions.
+ * This is the main function your backend/dashboard can call.
+ */
+function showMultipleCardiacRiskLocations(regions, diseaseName, riskLevel) {
+
+    if (!Array.isArray(regions)) {
+        regions = [regions];
+    }
+
+    regions = regions
+        .filter(Boolean)
+        .map(function (item) {
+            return String(item).trim().toUpperCase();
+        })
+        .filter(function (item, index, arr) {
+            return arr.indexOf(item) === index;
+        });
+
+    if (regions.length === 0) {
+        console.warn("No cardiac regions supplied by AI.");
+        return;
+    }
+
+    aiMultiRiskRegions = regions;
+
+    /*
+     * If the current model can display all regions, keep it.
+     * Otherwise load the best available model.
+     */
+    const wantedView = chooseAIRiskView(regions);
+
+    if (wantedView !== activeView) {
+
+        aiDetectedView = wantedView;
+
+        /*
+         * Store the risk information globally so it survives the GLB
+         * loading process.
+         */
+        aiMultiRiskData = regions.map(function (region) {
+            return {
+                region: region,
+                disease: diseaseName || "Cardiac abnormality detected",
+                riskLevel: riskLevel || "High Risk"
+            };
+        });
+
+        loadModel(wantedView);
+
+        waitForMultipleAIRiskLocations();
+        return;
+    }
+
+    /* Model is already correct — create markers immediately. */
+    buildMultipleAIRiskMarkers();
+}
+
+/* Wait until the selected GLB and its anatomy anchors are ready. */
+function waitForMultipleAIRiskLocations() {
+
+    let attempts = 0;
+
+    const timer = setInterval(function () {
+
+        attempts++;
+
+        if (
+            selectableModel &&
+            activeView === aiDetectedView
+        ) {
+
+            clearInterval(timer);
+
+            buildMultipleAIRiskMarkers();
+
+            return;
+        }
+
+        if (attempts > 150) {
+
+            clearInterval(timer);
+
+            console.warn(
+                "Timed out while locating AI cardiac risk regions:",
+                aiMultiRiskRegions
+            );
+        }
+
+    }, 100);
+}
+
+/* Build all markers after the model is loaded. */
+function buildMultipleAIRiskMarkers() {
+
+    removeAllMultiRiskMarkers();
+
+    if (!selectableModel) return;
+
+    aiMultiRiskRegions.forEach(function (regionKey, index) {
+
+        const marker =
+            createSingleMultiRiskMarker(
+                regionKey,
+                index
+            );
+
+        if (!marker) {
+
+            console.warn(
+                "No 3D anchor found for AI risk region:",
+                regionKey
+            );
+
+            return;
+        }
+
+        aiMultiRiskMarkers.push(marker);
+
+        const data =
+            aiMultiRiskData.find(function (item) {
+                return item.region === regionKey;
+            }) || {};
+
+        createMultiRiskLabel(
+            regionKey,
+            data
+        );
+    });
+
+    aiRiskActive = aiMultiRiskMarkers.length > 0;
+
+    /*
+     * Update the existing top notification using the first affected
+     * region while the number of affected locations is shown below.
+     */
+    if (aiMultiRiskRegions.length === 1) {
+
+        const data = aiMultiRiskData[0] || {};
+
+        showAIRiskAlert(
+            aiMultiRiskRegions[0],
+            data.disease,
+            data.riskLevel
+        );
+
+    } else {
+
+        document.getElementById("aiRiskArea").textContent =
+            aiMultiRiskRegions
+                .map(function (key) {
+                    const anatomy = getAnatomyByKey(key);
+                    return anatomy?.title || key;
+                })
+                .join(", ");
+
+        document.getElementById("aiRiskDisease").textContent =
+            "Multiple cardiac risk locations detected";
+
+        document.getElementById("aiRiskLevel").textContent =
+            (aiMultiRiskData[0] &&
+             aiMultiRiskData[0].riskLevel) ||
+            "High Risk";
+
+        document
+            .getElementById("aiRiskAlert")
+            .classList.add("show");
+    }
+
+    /*
+     * Focus camera on the average position of all detected regions.
+     * This keeps multiple blinking areas visible rather than zooming to
+     * only the left ventricle.
+     */
+    if (aiMultiRiskMarkers.length > 0) {
+
+        const focus = new THREE.Vector3();
+
+        aiMultiRiskMarkers.forEach(function (marker) {
+
+            const world = marker.anchor.clone();
+
+            selectableModel.localToWorld(world);
+
+            focus.add(world);
+        });
+
+        focus.multiplyScalar(
+            1 / aiMultiRiskMarkers.length
+        );
+
+        controls.minDistance =
+            HOTSPOT_MIN_DISTANCE;
+
+        const camPos =
+            focus.clone().add(
+                new THREE.Vector3(
+                    0,
+                    0.15,
+                    3.0
+                )
+            );
+
+        tweenCamera(
+            camPos,
+            focus,
+            1000
+        );
+    }
+
+    console.log(
+        "AI cardiac risk locations displayed:",
+        aiMultiRiskRegions
+    );
+}
+
+/* Override the existing single-marker animation with multi-marker animation. */
+function animate3DAIRiskMarker() {
+
+    if (
+        !aiRiskActive ||
+        aiMultiRiskMarkers.length === 0
+    ) {
+        return;
+    }
+
+    const t =
+        performance.now() * 0.005;
+
+    aiMultiRiskMarkers.forEach(function (marker) {
+
+        const time =
+            t + marker.phase;
+
+        const blink =
+            0.25 +
+            (Math.sin(time * 2.8) + 1) * 0.375;
+
+        const pulse =
+            1 +
+            (Math.sin(time * 1.8) + 1) * 0.42;
+
+        marker.core.material.opacity =
+            blink;
+
+        marker.core.scale.set(
+            pulse,
+            pulse,
+            pulse
+        );
+
+        const s1 =
+            1 +
+            (Math.sin(time * 2.2) + 1) * 0.25;
+
+        marker.ring1.scale.set(
+            s1,
+            s1,
+            s1
+        );
+
+        marker.ring1.material.opacity =
+            0.3 + blink * 0.6;
+
+        const s2 =
+            1 +
+            (Math.sin(time * 1.65 + 1) + 1) * 0.5;
+
+        marker.ring2.scale.set(
+            s2,
+            s2,
+            s2
+        );
+
+        marker.ring2.material.opacity =
+            Math.max(
+                0.08,
+                0.72 - (s2 - 1) * 0.35
+            );
+
+        const s3 =
+            1 +
+            (Math.sin(time * 1.25 + 2) + 1) * 0.85;
+
+        marker.ring3.scale.set(
+            s3,
+            s3,
+            s3
+        );
+
+        marker.ring3.material.opacity =
+            Math.max(
+                0.03,
+                0.48 - (s3 - 1) * 0.2
+            );
+
+        marker.ring1.rotation.z += 0.025;
+        marker.ring2.rotation.z -= 0.018;
+        marker.ring3.rotation.z += 0.012;
+    });
+
+    updateMultipleRiskLabels();
+}
+
+/* Keep every label attached to its own blinking 3D region. */
+function updateMultipleRiskLabels() {
+
+    if (
+        !camera ||
+        aiMultiRiskMarkers.length === 0
+    ) {
+        return;
+    }
+
+    aiMultiRiskMarkers.forEach(function (marker, index) {
+
+        const label =
+            aiMultiRiskLabels[index];
+
+        if (!label) return;
+
+        const world =
+            marker.anchor.clone();
+
+        selectableModel.localToWorld(world);
+
+        const projected =
+            world.project(camera);
+
+        if (
+            projected.z > 1 ||
+            projected.x < -1.2 ||
+            projected.x > 1.2 ||
+            projected.y < -1.2 ||
+            projected.y > 1.2
+        ) {
+
+            label.style.display = "none";
+
+            return;
+        }
+
+        const x =
+            (projected.x * 0.5 + 0.5) *
+            window.innerWidth;
+
+        const y =
+            (-projected.y * 0.5 + 0.5) *
+            window.innerHeight;
+
+        label.style.left =
+            x + "px";
+
+        label.style.top =
+            y + "px";
+
+        label.style.display =
+            "block";
+    });
+}
+
+/*
+ * Override hideAIRiskAlert so closing the alert also clears every
+ * multi-region 3D marker.
+ */
+const originalHideAIRiskAlert =
+    hideAIRiskAlert;
+
+function hideAIRiskAlert() {
+
+    removeAllMultiRiskMarkers();
+
+    aiMultiRiskRegions = [];
+    aiMultiRiskData = [];
+
+    /*
+     * Call the original cleanup for the old screen-space marker.
+     */
+    originalHideAIRiskAlert();
+
+    aiRiskActive = false;
+}
+
+/*
+ * Override the AI result handler.
+ * Existing one-region backend responses continue to work.
+ * New backend responses can send regions:[...].
+ */
+function handleAIRiskPrediction(result) {
+
+    if (!result) {
+
+        console.warn(
+            "AI prediction result is empty."
+        );
+
+        return;
+    }
+
+    const risk =
+        result.risk === true ||
+        result.risk === "true" ||
+        result.prediction === "RISK" ||
+        result.prediction === "HIGH RISK" ||
+        result.prediction === "ABNORMAL" ||
+        result.abnormal === true;
+
+    if (!risk) {
+
+        hideAIRiskAlert();
+
+        return;
+    }
+
+    const regions =
+        getAIRiskRegions(result);
+
+    const disease =
+        result.disease ||
+        result.condition ||
+        result.diagnosis ||
+        "Cardiac abnormality detected";
+
+    const riskLevel =
+        result.risk_level ||
+        result.riskLevel ||
+        result.level ||
+        "High Risk";
+
+    if (regions.length === 0) {
+
+        console.warn(
+            "AI predicted cardiac risk, but no cardiac region was returned."
+        );
+
+        showAIRiskAlert(
+            "Unknown",
+            disease,
+            riskLevel
+        );
+
+        sendAIRiskNotification(
+            "Unknown",
+            disease,
+            riskLevel
+        );
+
+        return;
+    }
+
+    /*
+     * Browser notification:
+     * one notification contains all detected locations.
+     */
+    const areaNames =
+        regions.map(function (key) {
+
+            const anatomy =
+                getAnatomyByKey(key);
+
+            return anatomy?.title || key;
+
+        });
+
+    if ("Notification" in window &&
+        Notification.permission === "granted") {
+
+        try {
+
+            const notification =
+                new Notification(
+                    "⚠ CARDIAC RISK DETECTED",
+                    {
+                        body:
+                            "Affected area(s): " +
+                            areaNames.join(", ") +
+                            "\nCondition: " +
+                            disease +
+                            "\nRisk Level: " +
+                            riskLevel,
+                        tag: "cardiac-ai-multi-risk",
+                        requireInteraction: true
+                    }
+                );
+
+            notification.onclick =
+                function () {
+
+                    window.focus();
+
+                    notification.close();
+                };
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to create browser notification:",
+                error
+            );
+        }
+
+    } else if ("Notification" in window &&
+               Notification.permission === "default") {
+
+        requestAIRiskNotificationPermission();
+    }
+
+    showMultipleCardiacRiskLocations(
+        regions,
+        disease,
+        riskLevel
+    );
+}
+
+/* ============================================================
+   DIRECT TEST FUNCTION
+   ------------------------------------------------------------
+   Paste one of these into the browser console to test.
+
+   One region:
+   testMultiCardiacRisk(["LV"]);
+
+   Multiple regions:
+   testMultiCardiacRisk([
+       "LV",
+       "RA",
+       "AORTA",
+       "CORO_ART"
+   ]);
+
+   Interior structures:
+   testMultiCardiacRisk([
+       "LV",
+       "MV",
+       "AV",
+       "IVS"
+   ]);
+============================================================ */
+
+function testMultiCardiacRisk(
+    regions
+) {
+
+    showMultipleCardiacRiskLocations(
+        regions,
+        "AI Cardiac Abnormality",
+        "High Risk"
+    );
+
+    /*
+     * Request notification permission only after the user explicitly
+     * starts a test from the console/UI.
+     */
+    if (
+        "Notification" in window &&
+        Notification.permission === "default"
+    ) {
+
+        Notification.requestPermission()
+            .then(function () {
+
+                console.log(
+                    "Notification permission:",
+                    Notification.permission
+                );
+
+            })
+            .catch(function (error) {
+
+                console.warn(
+                    "Notification permission request failed:",
+                    error
+                );
+            });
+    }
+}
+
 </script>
+
+
+/* ============================================================
+   AI MODEL INTEGRATION EXAMPLE
+   The Python/Flask frontend can call:
+       handleAIRiskPrediction(result);
+
+   Example result:
+   {
+       "risk": true,
+       "region": "LV",
+       "disease": "Left Ventricular Hypertrophy",
+       "risk_level": "High Risk",
+       "confidence": 94.6
+   }
+============================================================ */
+
+
+/*
+============================================================
+OPTIONAL TEST
+
+To test the blinking location manually from the browser console:
+
+showDetectedCardiacLocation(
+    "LV",
+    "Left Ventricular Hypertrophy",
+    "High Risk"
+);
+
+Other examples:
+
+showDetectedCardiacLocation("RA", "Atrial Fibrillation", "Moderate Risk");
+showDetectedCardiacLocation("AORTA", "Aortic Aneurysm", "High Risk");
+showDetectedCardiacLocation("CORO_ART", "Coronary Artery Disease", "High Risk");
+showDetectedCardiacLocation("MV", "Mitral Regurgitation", "Moderate Risk");
+
+============================================================
+*/
 
 </body>
 </html>

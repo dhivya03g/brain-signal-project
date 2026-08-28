@@ -54,7 +54,6 @@
             border-radius:10px;
         }
 
-
         /* ==================================================
            CARDIAC RISK + HEART DISEASE SECTIONS
         ================================================== */
@@ -114,6 +113,10 @@
             opacity:0.85;
         }
 
+        .predict-button:disabled{
+            opacity:0.5;
+            cursor:not-allowed;
+        }
 
         /* PARAMETER CARDS */
 
@@ -130,7 +133,6 @@
             font-weight:bold;
             margin-top:10px;
         }
-
 
         /* AI RESULT */
 
@@ -165,7 +167,6 @@
             margin-top:15px;
             font-weight:bold;
         }
-
 
         /* ==================================================
            ECG ARRHYTHMIA CNN
@@ -555,6 +556,7 @@
 
             <button
                 class="predict-button"
+                id="cardiacRiskButton"
                 onclick="predictCardiacRisk()"
             >
                 Analyze Cardiac Risk
@@ -771,7 +773,7 @@
 ================================================== -->
 
 <h2 class="section-title">
-    🫀 Cardiac Abnormality Assessment
+    🫀 Heart Disease Prediction
 </h2>
 
 
@@ -983,10 +985,11 @@
 
             <button
                 class="predict-button"
+                id="heartDiseaseButton"
                 onclick="predictHeartDisease()"
             >
 
-                Assess Cardiac Abnormality Risk
+                Predict Heart Disease
 
             </button>
 
@@ -1007,11 +1010,11 @@
 
 
 <!-- ==================================================
-     CARDIAC ABNORMALITY ASSESSMENT RESULT
+     HEART DISEASE RESULT
 ================================================== -->
 
 <h2 class="section-title">
-    🧠 AI Cardiac Abnormality Assessment
+    🧠 AI Heart Disease Assessment
 </h2>
 
 
@@ -1021,7 +1024,7 @@
     <div class="risk-result-card">
 
         <h3>
-            Cardiac Condition Status
+            Heart Disease Status
         </h3>
 
         <div
@@ -1037,7 +1040,7 @@
     <div class="risk-result-card">
 
         <h3>
-            Abnormality Probability
+            Disease Probability
         </h3>
 
         <div
@@ -1053,7 +1056,23 @@
     <div class="risk-result-card">
 
         <h3>
-            Cardiac Assessment
+            Heart Disease Model Accuracy
+        </h3>
+
+        <div
+            class="value"
+            id="heartDiseaseAccuracy"
+        >
+            81.67%
+        </div>
+
+    </div>
+
+
+    <div class="risk-result-card">
+
+        <h3>
+            AI Prediction
         </h3>
 
         <div
@@ -1067,6 +1086,7 @@
 
 
 </div>
+
 
 
 <!-- ==================================================
@@ -1176,7 +1196,6 @@
    HEART RATE GRAPH
 ================================================== */
 
-
 const ctx =
     document
     .getElementById('chart')
@@ -1277,7 +1296,6 @@ const chart = new Chart(
    HEART RATE UPDATE
 ================================================== */
 
-
 setInterval(
     async()=>{
 
@@ -1360,109 +1378,176 @@ setInterval(
    CARDIAC RISK PREDICTION
 ================================================== */
 
-
 async function predictCardiacRisk(){
-
 
     const errorMessage =
         document.getElementById(
             "errorMessage"
         );
 
+    const button =
+        document.getElementById(
+            "cardiacRiskButton"
+        );
+
 
     errorMessage.innerText = "";
 
 
+    /* ==========================================
+       GET INPUT VALUES
+    ========================================== */
+
+    const age =
+        parseFloat(
+            document
+            .getElementById("age")
+            .value
+        );
+
+
+    const gender =
+        parseInt(
+            document
+            .getElementById("gender")
+            .value
+        );
+
+
+    const height =
+        parseFloat(
+            document
+            .getElementById("height")
+            .value
+        );
+
+
+    const weight =
+        parseFloat(
+            document
+            .getElementById("weight")
+            .value
+        );
+
+
+    const ap_hi =
+        parseFloat(
+            document
+            .getElementById("ap_hi")
+            .value
+        );
+
+
+    const ap_lo =
+        parseFloat(
+            document
+            .getElementById("ap_lo")
+            .value
+        );
+
+
+    const cholesterol =
+        parseInt(
+            document
+            .getElementById("cholesterol")
+            .value
+        );
+
+
+    const gluc =
+        parseInt(
+            document
+            .getElementById("gluc")
+            .value
+        );
+
+
+    const smoke =
+        parseInt(
+            document
+            .getElementById("smoke")
+            .value
+        );
+
+
+    const alco =
+        parseInt(
+            document
+            .getElementById("alco")
+            .value
+        );
+
+
+    const active =
+        parseInt(
+            document
+            .getElementById("active")
+            .value
+        );
+
+
+    /* ==========================================
+       VALIDATION
+    ========================================== */
+
+    if(
+        !Number.isFinite(age) ||
+        !Number.isFinite(height) ||
+        !Number.isFinite(weight) ||
+        !Number.isFinite(ap_hi) ||
+        !Number.isFinite(ap_lo)
+    ){
+
+        errorMessage.innerText =
+            "Please enter valid patient values.";
+
+        return;
+
+    }
+
+
+    /* ==========================================
+       SEND DATA TO FLASK
+    ========================================== */
+
     const patientData = {
 
-        age:
-            parseFloat(
-                document
-                .getElementById("age")
-                .value
-            ),
+        age: age,
 
-        gender:
-            parseInt(
-                document
-                .getElementById("gender")
-                .value
-            ),
+        gender: gender,
 
-        height:
-            parseFloat(
-                document
-                .getElementById("height")
-                .value
-            ),
+        height: height,
 
-        weight:
-            parseFloat(
-                document
-                .getElementById("weight")
-                .value
-            ),
+        weight: weight,
 
-        ap_hi:
-            parseFloat(
-                document
-                .getElementById("ap_hi")
-                .value
-            ),
+        ap_hi: ap_hi,
 
-        ap_lo:
-            parseFloat(
-                document
-                .getElementById("ap_lo")
-                .value
-            ),
+        ap_lo: ap_lo,
 
-        cholesterol:
-            parseInt(
-                document
-                .getElementById("cholesterol")
-                .value
-            ),
+        cholesterol: cholesterol,
 
-        gluc:
-            parseInt(
-                document
-                .getElementById("gluc")
-                .value
-            ),
+        gluc: gluc,
 
-        smoke:
-            parseInt(
-                document
-                .getElementById("smoke")
-                .value
-            ),
+        smoke: smoke,
 
-        alco:
-            parseInt(
-                document
-                .getElementById("alco")
-                .value
-            ),
+        alco: alco,
 
-        active:
-            parseInt(
-                document
-                .getElementById("active")
-                .value
-            )
+        active: active
 
     };
 
 
     try{
 
+        button.disabled = true;
+
+        button.innerText =
+            "Analyzing...";
+
 
         const response =
             await fetch(
-
                 "/api/cardiac-risk",
-
                 {
 
                     method:"POST",
@@ -1480,7 +1565,6 @@ async function predictCardiacRisk(){
                         )
 
                 }
-
             );
 
 
@@ -1488,15 +1572,35 @@ async function predictCardiacRisk(){
             await response.json();
 
 
+        console.log(
+            "CARDIAC RISK API RESULT:",
+            result
+        );
+
+
         if(!response.ok){
 
             throw new Error(
                 result.error ||
-                "Prediction failed"
+                "Cardiac risk prediction failed"
             );
 
         }
 
+
+        if(result.success === false){
+
+            throw new Error(
+                result.error ||
+                "Cardiac risk prediction failed"
+            );
+
+        }
+
+
+        /* ==========================================
+           DISPLAY PATIENT PARAMETERS
+        ========================================== */
 
         document
             .getElementById(
@@ -1504,11 +1608,25 @@ async function predictCardiacRisk(){
             )
             .innerText =
 
-            result.parameters.systolic_bp
-            +
-            " / "
-            +
-            result.parameters.diastolic_bp;
+            ap_hi +
+            " / " +
+            ap_lo;
+
+
+        /* ==========================================
+           BMI
+        ========================================== */
+
+        const heightMeters =
+            height / 100;
+
+
+        const bmi =
+            weight /
+            (
+                heightMeters *
+                heightMeters
+            );
 
 
         document
@@ -1516,16 +1634,20 @@ async function predictCardiacRisk(){
                 "displayBMI"
             )
             .innerText =
-            result.parameters.bmi;
+
+            bmi.toFixed(2);
 
 
+        /* ==========================================
+           CHOLESTEROL
+        ========================================== */
 
         let cholesterolText =
             "Normal";
 
 
         if(
-            result.parameters.cholesterol === 2
+            cholesterol === 2
         ){
 
             cholesterolText =
@@ -1535,7 +1657,7 @@ async function predictCardiacRisk(){
 
 
         if(
-            result.parameters.cholesterol === 3
+            cholesterol === 3
         ){
 
             cholesterolText =
@@ -1552,13 +1674,16 @@ async function predictCardiacRisk(){
             cholesterolText;
 
 
+        /* ==========================================
+           GLUCOSE
+        ========================================== */
 
         let glucoseText =
             "Normal";
 
 
         if(
-            result.parameters.glucose === 2
+            gluc === 2
         ){
 
             glucoseText =
@@ -1568,7 +1693,7 @@ async function predictCardiacRisk(){
 
 
         if(
-            result.parameters.glucose === 3
+            gluc === 3
         ){
 
             glucoseText =
@@ -1585,6 +1710,9 @@ async function predictCardiacRisk(){
             glucoseText;
 
 
+        /* ==========================================
+           SMOKING
+        ========================================== */
 
         document
             .getElementById(
@@ -1592,13 +1720,16 @@ async function predictCardiacRisk(){
             )
             .innerText =
 
-            result.parameters.smoke === 1
+            smoke === 1
             ?
             "Yes"
             :
             "No";
 
 
+        /* ==========================================
+           ALCOHOL
+        ========================================== */
 
         document
             .getElementById(
@@ -1606,13 +1737,16 @@ async function predictCardiacRisk(){
             )
             .innerText =
 
-            result.parameters.alcohol === 1
+            alco === 1
             ?
             "Yes"
             :
             "No";
 
 
+        /* ==========================================
+           ACTIVITY
+        ========================================== */
 
         document
             .getElementById(
@@ -1620,12 +1754,43 @@ async function predictCardiacRisk(){
             )
             .innerText =
 
-            result.parameters.active === 1
+            active === 1
             ?
             "Active"
             :
             "Inactive";
 
+
+        /* ==========================================
+           AI PROBABILITY
+
+           IMPORTANT:
+           app.py returns:
+
+           result.probability
+
+           NOT:
+
+           result.risk_percentage
+        ========================================== */
+
+        const probability =
+            Number(
+                result.probability
+            );
+
+
+        if(
+            !Number.isFinite(
+                probability
+            )
+        ){
+
+            throw new Error(
+                "Invalid probability returned by AI model"
+            );
+
+        }
 
 
         document
@@ -1634,11 +1799,14 @@ async function predictCardiacRisk(){
             )
             .innerText =
 
-            result.risk_percentage
+            probability.toFixed(2)
             +
             "%";
 
 
+        /* ==========================================
+           RISK LEVEL
+        ========================================== */
 
         const riskLevel =
             document.getElementById(
@@ -1646,8 +1814,37 @@ async function predictCardiacRisk(){
             );
 
 
+        let displayRiskLevel;
+
+
+        if(
+            probability < 30
+        ){
+
+            displayRiskLevel =
+                "Low Risk";
+
+        }
+
+        else if(
+            probability < 70
+        ){
+
+            displayRiskLevel =
+                "Moderate Risk";
+
+        }
+
+        else{
+
+            displayRiskLevel =
+                "High Risk";
+
+        }
+
+
         riskLevel.innerText =
-            result.risk_level;
+            displayRiskLevel;
 
 
         riskLevel.classList.remove(
@@ -1658,56 +1855,55 @@ async function predictCardiacRisk(){
 
 
         if(
-            result.risk_level ===
+            displayRiskLevel ===
             "Low Risk"
         ){
 
-            riskLevel
-                .classList
-                .add(
-                    "low-risk"
-                );
+            riskLevel.classList.add(
+                "low-risk"
+            );
 
         }
 
-
         else if(
-            result.risk_level ===
+            displayRiskLevel ===
             "Moderate Risk"
         ){
 
-            riskLevel
-                .classList
-                .add(
-                    "moderate-risk"
-                );
+            riskLevel.classList.add(
+                "moderate-risk"
+            );
 
         }
-
 
         else{
 
-            riskLevel
-                .classList
-                .add(
-                    "high-risk"
-                );
+            riskLevel.classList.add(
+                "high-risk"
+            );
 
         }
 
 
+        /* ==========================================
+           MODEL ACCURACY
+        ========================================== */
 
         document
             .getElementById(
                 "cardiacModelAccuracy"
             )
             .innerText =
-
-            result.model_accuracy
-            +
-            "%";
+            "71.97%";
 
 
+        /* ==========================================
+           AI PREDICTION
+
+           app.py returns:
+
+           prediction = 0 or 1
+        ========================================== */
 
         const predictionElement =
             document.getElementById(
@@ -1716,7 +1912,9 @@ async function predictCardiacRisk(){
 
 
         if(
-            result.prediction === 1
+            Number(
+                result.prediction
+            ) === 1
         ){
 
             predictionElement.innerText =
@@ -1742,7 +1940,6 @@ async function predictCardiacRisk(){
 
     catch(error){
 
-
         console.error(
             "Cardiac Risk Error:",
             error
@@ -1750,9 +1947,17 @@ async function predictCardiacRisk(){
 
 
         errorMessage.innerText =
-            "Error: "
-            +
+            "Error: " +
             error.message;
+
+    }
+
+    finally{
+
+        button.disabled = false;
+
+        button.innerText =
+            "Analyze Cardiac Risk";
 
     }
 
@@ -1764,9 +1969,7 @@ async function predictCardiacRisk(){
    HEART DISEASE PREDICTION
 ================================================== */
 
-
 async function predictHeartDisease(){
-
 
     const errorElement =
         document.getElementById(
@@ -1774,13 +1977,25 @@ async function predictHeartDisease(){
         );
 
 
+    const button =
+        document.getElementById(
+            "heartDiseaseButton"
+        );
+
+
     errorElement.innerText = "";
 
+
+    /* ==========================================
+       GENDER
+    ========================================== */
 
     const genderValue =
         parseInt(
             document
-            .getElementById("gender")
+            .getElementById(
+                "gender"
+            )
             .value
         );
 
@@ -1793,12 +2008,18 @@ async function predictHeartDisease(){
         0;
 
 
+    /* ==========================================
+       PATIENT DATA
+    ========================================== */
+
     const patientData = {
 
         age:
             parseFloat(
                 document
-                .getElementById("age")
+                .getElementById(
+                    "age"
+                )
                 .value
             ),
 
@@ -1808,77 +2029,99 @@ async function predictHeartDisease(){
         cp:
             parseInt(
                 document
-                .getElementById("hd_cp")
+                .getElementById(
+                    "hd_cp"
+                )
                 .value
             ),
 
         trestbps:
             parseFloat(
                 document
-                .getElementById("ap_hi")
+                .getElementById(
+                    "ap_hi"
+                )
                 .value
             ),
 
         chol:
             parseFloat(
                 document
-                .getElementById("hd_chol")
+                .getElementById(
+                    "hd_chol"
+                )
                 .value
             ),
 
         fbs:
             parseInt(
                 document
-                .getElementById("hd_fbs")
+                .getElementById(
+                    "hd_fbs"
+                )
                 .value
             ),
 
         restecg:
             parseInt(
                 document
-                .getElementById("hd_restecg")
+                .getElementById(
+                    "hd_restecg"
+                )
                 .value
             ),
 
         thalach:
             parseFloat(
                 document
-                .getElementById("hd_thalach")
+                .getElementById(
+                    "hd_thalach"
+                )
                 .value
             ),
 
         exang:
             parseInt(
                 document
-                .getElementById("hd_exang")
+                .getElementById(
+                    "hd_exang"
+                )
                 .value
             ),
 
         oldpeak:
             parseFloat(
                 document
-                .getElementById("hd_oldpeak")
+                .getElementById(
+                    "hd_oldpeak"
+                )
                 .value
             ),
 
         slope:
             parseInt(
                 document
-                .getElementById("hd_slope")
+                .getElementById(
+                    "hd_slope"
+                )
                 .value
             ),
 
         ca:
             parseInt(
                 document
-                .getElementById("hd_ca")
+                .getElementById(
+                    "hd_ca"
+                )
                 .value
             ),
 
         thal:
             parseInt(
                 document
-                .getElementById("hd_thal")
+                .getElementById(
+                    "hd_thal"
+                )
                 .value
             )
 
@@ -1887,12 +2130,19 @@ async function predictHeartDisease(){
 
     try{
 
+        button.disabled = true;
+
+        button.innerText =
+            "Predicting...";
+
+
+        /* ==========================================
+           SEND TO FLASK
+        ========================================== */
 
         const response =
             await fetch(
-
                 "/api/heart-disease",
-
                 {
 
                     method:"POST",
@@ -1910,7 +2160,6 @@ async function predictHeartDisease(){
                         )
 
                 }
-
             );
 
 
@@ -1918,15 +2167,61 @@ async function predictHeartDisease(){
             await response.json();
 
 
+        console.log(
+            "HEART DISEASE API RESULT:",
+            result
+        );
+
+
         if(!response.ok){
 
             throw new Error(
                 result.error ||
-                "Cardiac abnormality assessment failed"
+                "Heart disease prediction failed"
             );
 
         }
 
+
+        if(result.success === false){
+
+            throw new Error(
+                result.error ||
+                "Heart disease prediction failed"
+            );
+
+        }
+
+
+        /* ==========================================
+           PROBABILITY
+
+           app.py returns:
+
+           result.probability
+
+           NOT:
+
+           result.disease_probability
+        ========================================== */
+
+        const probability =
+            Number(
+                result.probability
+            );
+
+
+        if(
+            !Number.isFinite(
+                probability
+            )
+        ){
+
+            throw new Error(
+                "Invalid probability returned by AI model"
+            );
+
+        }
 
 
         document
@@ -1935,11 +2230,26 @@ async function predictHeartDisease(){
             )
             .innerText =
 
-            result.abnormality_probability
+            probability.toFixed(2)
             +
             "%";
 
 
+        /* ==========================================
+           MODEL ACCURACY
+        ========================================== */
+
+        document
+            .getElementById(
+                "heartDiseaseAccuracy"
+            )
+            .innerText =
+            "81.67%";
+
+
+        /* ==========================================
+           STATUS
+        ========================================== */
 
         const statusElement =
             document.getElementById(
@@ -1951,6 +2261,9 @@ async function predictHeartDisease(){
             result.status;
 
 
+        /* ==========================================
+           PREDICTION
+        ========================================== */
 
         const predictionElement =
             document.getElementById(
@@ -1959,11 +2272,13 @@ async function predictHeartDisease(){
 
 
         if(
-            result.prediction === 1
+            Number(
+                result.prediction
+            ) === 1
         ){
 
             predictionElement.innerText =
-                "Cardiac Abnormality Detected";
+                "Disease Detected";
 
             predictionElement.className =
                 "value abnormal";
@@ -1976,7 +2291,7 @@ async function predictHeartDisease(){
         else{
 
             predictionElement.innerText =
-                "No Significant Cardiac Abnormality Detected";
+                "No Disease Detected";
 
             predictionElement.className =
                 "value normal";
@@ -1991,17 +2306,24 @@ async function predictHeartDisease(){
 
     catch(error){
 
-
         console.error(
-            "Cardiac Abnormality Error:",
+            "Heart Disease Error:",
             error
         );
 
 
         errorElement.innerText =
-            "Error: "
-            +
+            "Error: " +
             error.message;
+
+    }
+
+    finally{
+
+        button.disabled = false;
+
+        button.innerText =
+            "Predict Heart Disease";
 
     }
 
@@ -2013,10 +2335,11 @@ async function predictHeartDisease(){
    ECG ARRHYTHMIA CHART
 ================================================== */
 
-
 const ecgCtx =
     document
-    .getElementById("ecgChart")
+    .getElementById(
+        "ecgChart"
+    )
     .getContext("2d");
 
 
@@ -2125,12 +2448,9 @@ const ecgChart =
    ECG ARRHYTHMIA CNN API
 ================================================== */
 
-
 async function updateArrhythmia(){
 
-
     try{
-
 
         const response =
             await fetch(
@@ -2157,6 +2477,19 @@ async function updateArrhythmia(){
         );
 
 
+        if(result.success === false){
+
+            throw new Error(
+                result.error ||
+                "ECG prediction failed"
+            );
+
+        }
+
+
+        /* ==========================================
+           ECG RHYTHM
+        ========================================== */
 
         const rhythmElement =
             document.getElementById(
@@ -2164,13 +2497,7 @@ async function updateArrhythmia(){
             );
 
 
-        /*
-        API may return class_name,
-        rhythm or status depending on app.py.
-        */
-
         const rhythmName =
-            result.class_name ||
             result.rhythm ||
             result.status ||
             result.class_code ||
@@ -2181,20 +2508,40 @@ async function updateArrhythmia(){
             rhythmName;
 
 
+        /* ==========================================
+           ARRHYTHMIA CLASS
+        ========================================== */
 
-        document
-            .getElementById(
+        const classElement =
+            document.getElementById(
                 "arrhythmiaClass"
-            )
-            .innerText =
-            result.class_code || "--";
+            );
 
 
+        classElement.innerText =
+            result.class_code ||
+            "--";
+
+
+        /* ==========================================
+           CONFIDENCE
+        ========================================== */
 
         let confidence =
             Number(
-                result.confidence || 0
+                result.confidence
             );
+
+
+        if(
+            !Number.isFinite(
+                confidence
+            )
+        ){
+
+            confidence = 0;
+
+        }
 
 
         document
@@ -2208,6 +2555,9 @@ async function updateArrhythmia(){
             "%";
 
 
+        /* ==========================================
+           ALERT
+        ========================================== */
 
         const alertElement =
             document.getElementById(
@@ -2215,16 +2565,10 @@ async function updateArrhythmia(){
             );
 
 
-        const classElement =
-            document.getElementById(
-                "arrhythmiaClass"
-            );
-
-
         if(
-            result.class_code === "N"
+            result.class_code ===
+            "N"
         ){
-
 
             rhythmElement.className =
                 "value normal";
@@ -2241,11 +2585,9 @@ async function updateArrhythmia(){
             alertElement.innerText =
                 "✓ Normal ECG Rhythm Detected";
 
-
         }
 
         else{
-
 
             rhythmElement.className =
                 "value abnormal";
@@ -2264,24 +2606,24 @@ async function updateArrhythmia(){
                 +
                 rhythmName;
 
-
         }
 
 
-
-        /*
-        ECG array returned from Flask
-        */
+        /* ==========================================
+           ECG WAVEFORM
+        ========================================== */
 
         if(
             result.ecg &&
-            Array.isArray(result.ecg)
+            Array.isArray(
+                result.ecg
+            )
         ){
-
 
             ecgChart.data.labels =
                 result.ecg.map(
-                    (_,index)=>index
+                    (_,index)=>
+                        index
                 );
 
 
@@ -2294,15 +2636,12 @@ async function updateArrhythmia(){
 
             ecgChart.update();
 
-
         }
-
 
     }
 
 
     catch(error){
-
 
         console.error(
             "Arrhythmia API Error:",
@@ -2321,11 +2660,11 @@ async function updateArrhythmia(){
 
 
         alertElement.innerText =
-            "Unable to retrieve ECG prediction";
-
+            "Unable to retrieve ECG prediction: "
+            +
+            error.message;
 
     }
-
 
 }
 
@@ -2334,7 +2673,6 @@ async function updateArrhythmia(){
 /* ==================================================
    LOAD ECG
 ================================================== */
-
 
 updateArrhythmia();
 
