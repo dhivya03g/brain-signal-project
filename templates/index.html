@@ -54,10 +54,6 @@
             border-radius:10px;
         }
 
-        /* ==================================================
-           CARDIAC RISK + HEART DISEASE SECTIONS
-        ================================================== */
-
         .section-title{
             width:100%;
             text-align:center;
@@ -118,8 +114,6 @@
             cursor:not-allowed;
         }
 
-        /* PARAMETER CARDS */
-
         .parameter-card{
             width:200px;
             background:rgba(255,255,255,0.08);
@@ -133,8 +127,6 @@
             font-weight:bold;
             margin-top:10px;
         }
-
-        /* AI RESULT */
 
         .risk-result-card{
             width:280px;
@@ -167,10 +159,6 @@
             margin-top:15px;
             font-weight:bold;
         }
-
-        /* ==================================================
-           ECG ARRHYTHMIA CNN
-        ================================================== */
 
         .ecg-result-card{
             width:230px;
@@ -219,13 +207,7 @@
 
 </head>
 
-
 <body>
-
-
-<!-- ==================================================
-     EXISTING TOP BAR
-================================================== -->
 
 <div class="topbar">
 
@@ -249,12 +231,7 @@
 </div>
 
 
-<!-- ==================================================
-     EXISTING DASHBOARD
-================================================== -->
-
 <div class="dashboard">
-
 
     <div class="card">
 
@@ -347,14 +324,8 @@
 
     </div>
 
-
 </div>
 
-
-
-<!-- ==================================================
-     PATIENT CARDIAC PARAMETERS
-================================================== -->
 
 <h2 class="section-title">
     🩺 Patient Cardiac Parameters
@@ -363,12 +334,9 @@
 
 <div class="dashboard">
 
-
     <div class="patient-form">
 
-
         <div class="form-grid">
-
 
             <div class="input-group">
 
@@ -548,7 +516,6 @@
 
             </div>
 
-
         </div>
 
 
@@ -570,17 +537,10 @@
             style="text-align:center"
         ></div>
 
-
     </div>
-
 
 </div>
 
-
-
-<!-- ==================================================
-     CARDIAC HEALTH PARAMETERS
-================================================== -->
 
 <h2 class="section-title">
     📊 Cardiac Health Parameters
@@ -588,7 +548,6 @@
 
 
 <div class="dashboard">
-
 
     <div class="parameter-card">
 
@@ -689,14 +648,8 @@
 
     </div>
 
-
 </div>
 
-
-
-<!-- ==================================================
-     AI CARDIAC RISK RESULT
-================================================== -->
 
 <h2 class="section-title">
     🤖 AI Cardiovascular Risk Assessment
@@ -704,7 +657,6 @@
 
 
 <div class="dashboard">
-
 
     <div class="risk-result-card">
 
@@ -763,14 +715,8 @@
 
     </div>
 
-
 </div>
 
-
-
-<!-- ==================================================
-     HEART DISEASE PREDICTION
-================================================== -->
 
 <h2 class="section-title">
     🫀 Heart Disease Prediction
@@ -779,12 +725,9 @@
 
 <div class="dashboard">
 
-
     <div class="patient-form">
 
-
         <div class="form-grid">
-
 
             <div class="input-group">
 
@@ -977,7 +920,6 @@
 
             </div>
 
-
         </div>
 
 
@@ -1001,17 +943,10 @@
             style="text-align:center"
         ></div>
 
-
     </div>
-
 
 </div>
 
-
-
-<!-- ==================================================
-     HEART DISEASE RESULT
-================================================== -->
 
 <h2 class="section-title">
     🧠 AI Heart Disease Assessment
@@ -1019,7 +954,6 @@
 
 
 <div class="dashboard">
-
 
     <div class="risk-result-card">
 
@@ -1084,14 +1018,8 @@
 
     </div>
 
-
 </div>
 
-
-
-<!-- ==================================================
-     ECG ARRHYTHMIA CNN SECTION
-================================================== -->
 
 <h2 class="section-title">
     ❤️ ECG Arrhythmia Detection
@@ -1099,7 +1027,6 @@
 
 
 <div class="dashboard">
-
 
     <div class="ecg-result-card">
 
@@ -1153,7 +1080,6 @@
 
     </div>
 
-
 </div>
 
 
@@ -1183,11 +1109,6 @@
 
 </div>
 
-
-
-<!-- ==================================================
-     JAVASCRIPT
-================================================== -->
 
 <script>
 
@@ -1291,7 +1212,6 @@ const chart = new Chart(
 );
 
 
-
 /* ==================================================
    HEART RATE UPDATE
 ================================================== */
@@ -1373,7 +1293,6 @@ setInterval(
 );
 
 
-
 /* ==================================================
    CARDIAC RISK PREDICTION
 ================================================== */
@@ -1393,10 +1312,6 @@ async function predictCardiacRisk(){
 
     errorMessage.innerText = "";
 
-
-    /* ==========================================
-       GET INPUT VALUES
-    ========================================== */
 
     const age =
         parseFloat(
@@ -1486,10 +1401,6 @@ async function predictCardiacRisk(){
         );
 
 
-    /* ==========================================
-       VALIDATION
-    ========================================== */
-
     if(
         !Number.isFinite(age) ||
         !Number.isFinite(height) ||
@@ -1505,10 +1416,6 @@ async function predictCardiacRisk(){
 
     }
 
-
-    /* ==========================================
-       SEND DATA TO FLASK
-    ========================================== */
 
     const patientData = {
 
@@ -1598,10 +1505,6 @@ async function predictCardiacRisk(){
         }
 
 
-        /* ==========================================
-           DISPLAY PATIENT PARAMETERS
-        ========================================== */
-
         document
             .getElementById(
                 "displayBP"
@@ -1612,10 +1515,6 @@ async function predictCardiacRisk(){
             " / " +
             ap_lo;
 
-
-        /* ==========================================
-           BMI
-        ========================================== */
 
         const heightMeters =
             height / 100;
@@ -1637,10 +1536,6 @@ async function predictCardiacRisk(){
 
             bmi.toFixed(2);
 
-
-        /* ==========================================
-           CHOLESTEROL
-        ========================================== */
 
         let cholesterolText =
             "Normal";
@@ -1674,10 +1569,6 @@ async function predictCardiacRisk(){
             cholesterolText;
 
 
-        /* ==========================================
-           GLUCOSE
-        ========================================== */
-
         let glucoseText =
             "Normal";
 
@@ -1710,10 +1601,6 @@ async function predictCardiacRisk(){
             glucoseText;
 
 
-        /* ==========================================
-           SMOKING
-        ========================================== */
-
         document
             .getElementById(
                 "displaySmoke"
@@ -1726,10 +1613,6 @@ async function predictCardiacRisk(){
             :
             "No";
 
-
-        /* ==========================================
-           ALCOHOL
-        ========================================== */
 
         document
             .getElementById(
@@ -1744,10 +1627,6 @@ async function predictCardiacRisk(){
             "No";
 
 
-        /* ==========================================
-           ACTIVITY
-        ========================================== */
-
         document
             .getElementById(
                 "displayActivity"
@@ -1761,22 +1640,21 @@ async function predictCardiacRisk(){
             "Inactive";
 
 
-        /* ==========================================
-           AI PROBABILITY
-
-           IMPORTANT:
-           app.py returns:
-
-           result.probability
-
-           NOT:
-
-           result.risk_percentage
-        ========================================== */
+        /*
+         * FIX:
+         * Accept both backend response formats.
+         *
+         * Existing backend:
+         * result.probability
+         *
+         * Alternate backend:
+         * result.abnormality_probability
+         */
 
         const probability =
             Number(
-                result.probability
+                result.probability ??
+                result.abnormality_probability
             );
 
 
@@ -1803,10 +1681,6 @@ async function predictCardiacRisk(){
             +
             "%";
 
-
-        /* ==========================================
-           RISK LEVEL
-        ========================================== */
 
         const riskLevel =
             document.getElementById(
@@ -1885,10 +1759,6 @@ async function predictCardiacRisk(){
         }
 
 
-        /* ==========================================
-           MODEL ACCURACY
-        ========================================== */
-
         document
             .getElementById(
                 "cardiacModelAccuracy"
@@ -1896,14 +1766,6 @@ async function predictCardiacRisk(){
             .innerText =
             "71.97%";
 
-
-        /* ==========================================
-           AI PREDICTION
-
-           app.py returns:
-
-           prediction = 0 or 1
-        ========================================== */
 
         const predictionElement =
             document.getElementById(
@@ -1964,7 +1826,6 @@ async function predictCardiacRisk(){
 }
 
 
-
 /* ==================================================
    HEART DISEASE PREDICTION
 ================================================== */
@@ -1986,10 +1847,6 @@ async function predictHeartDisease(){
     errorElement.innerText = "";
 
 
-    /* ==========================================
-       GENDER
-    ========================================== */
-
     const genderValue =
         parseInt(
             document
@@ -2007,10 +1864,6 @@ async function predictHeartDisease(){
         :
         0;
 
-
-    /* ==========================================
-       PATIENT DATA
-    ========================================== */
 
     const patientData = {
 
@@ -2136,10 +1989,6 @@ async function predictHeartDisease(){
             "Predicting...";
 
 
-        /* ==========================================
-           SEND TO FLASK
-        ========================================== */
-
         const response =
             await fetch(
                 "/api/heart-disease",
@@ -2193,21 +2042,21 @@ async function predictHeartDisease(){
         }
 
 
-        /* ==========================================
-           PROBABILITY
-
-           app.py returns:
-
-           result.probability
-
-           NOT:
-
-           result.disease_probability
-        ========================================== */
+        /*
+         * FIX:
+         * Your API may return either:
+         *
+         * result.probability
+         *
+         * OR
+         *
+         * result.abnormality_probability
+         */
 
         const probability =
             Number(
-                result.probability
+                result.probability ??
+                result.abnormality_probability
             );
 
 
@@ -2235,10 +2084,6 @@ async function predictHeartDisease(){
             "%";
 
 
-        /* ==========================================
-           MODEL ACCURACY
-        ========================================== */
-
         document
             .getElementById(
                 "heartDiseaseAccuracy"
@@ -2246,10 +2091,6 @@ async function predictHeartDisease(){
             .innerText =
             "81.67%";
 
-
-        /* ==========================================
-           STATUS
-        ========================================== */
 
         const statusElement =
             document.getElementById(
@@ -2260,10 +2101,6 @@ async function predictHeartDisease(){
         statusElement.innerText =
             result.status;
 
-
-        /* ==========================================
-           PREDICTION
-        ========================================== */
 
         const predictionElement =
             document.getElementById(
@@ -2328,7 +2165,6 @@ async function predictHeartDisease(){
     }
 
 }
-
 
 
 /* ==================================================
@@ -2443,7 +2279,6 @@ const ecgChart =
     );
 
 
-
 /* ==================================================
    ECG ARRHYTHMIA CNN API
 ================================================== */
@@ -2487,10 +2322,6 @@ async function updateArrhythmia(){
         }
 
 
-        /* ==========================================
-           ECG RHYTHM
-        ========================================== */
-
         const rhythmElement =
             document.getElementById(
                 "ecgRhythm"
@@ -2508,10 +2339,6 @@ async function updateArrhythmia(){
             rhythmName;
 
 
-        /* ==========================================
-           ARRHYTHMIA CLASS
-        ========================================== */
-
         const classElement =
             document.getElementById(
                 "arrhythmiaClass"
@@ -2522,10 +2349,6 @@ async function updateArrhythmia(){
             result.class_code ||
             "--";
 
-
-        /* ==========================================
-           CONFIDENCE
-        ========================================== */
 
         let confidence =
             Number(
@@ -2554,10 +2377,6 @@ async function updateArrhythmia(){
             +
             "%";
 
-
-        /* ==========================================
-           ALERT
-        ========================================== */
 
         const alertElement =
             document.getElementById(
@@ -2608,10 +2427,6 @@ async function updateArrhythmia(){
 
         }
 
-
-        /* ==========================================
-           ECG WAVEFORM
-        ========================================== */
 
         if(
             result.ecg &&
@@ -2668,11 +2483,6 @@ async function updateArrhythmia(){
 
 }
 
-
-
-/* ==================================================
-   LOAD ECG
-================================================== */
 
 updateArrhythmia();
 
