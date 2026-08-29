@@ -5,3 +5,5 @@ venv/
 .env
 mit-bih-arrhythmia-database-1.0.0/
 ecg_100.csvmodels/cardiac_risk_model.pkl
+datasets/ptb-xl/
+datasets.zip
