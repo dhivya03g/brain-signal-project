@@ -1,0 +1,46 @@
+{
+  "total_records": 21799,
+  "usable_records": 21388,
+  "excluded_records": 411,
+  "unique_patients_total": 18869,
+  "unique_patients_usable": 18617,
+  "class_counts": {
+    "CD": 4898,
+    "HYP": 2649,
+    "MI": 5469,
+    "NORM": 9514,
+    "STTC": 5235
+  },
+  "multi_label_records": 5144,
+  "invalid_scp_codes": 0,
+  "no_target_diagnostic_class": 411,
+  "split": {
+    "method": "patient-level",
+    "random_seed": 42,
+    "train_patients": 13031,
+    "validation_patients": 2793,
+    "test_patients": 2793,
+    "train_records": 14920,
+    "validation_records": 3220,
+    "test_records": 3248
+  },
+  "multi_label_combinations": {
+    "MI+STTC": 599,
+    "CD+HYP": 300,
+    "CD+MI": 1297,
+    "CD+STTC": 471,
+    "HYP+MI": 183,
+    "HYP+MI+STTC": 361,
+    "CD+HYP+MI+STTC": 156,
+    "HYP+STTC": 781,
+    "CD+NORM": 407,
+    "CD+MI+STTC": 223,
+    "CD+HYP+STTC": 211,
+    "NORM+STTC": 28,
+    "CD+HYP+MI": 117,
+    "CD+NORM+STTC": 5,
+    "CD+HYP+NORM": 2,
+    "HYP+NORM": 2,
+    "CD+HYP+MI+NORM": 1
+  }
+}

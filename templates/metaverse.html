@@ -431,6 +431,19 @@ href="/static/style.css">
 </div>
 <script>
 
+// ------------------------------------------------------------
+// ECG (PTB-XL CNN) region marker state -- declared FIRST, before
+// any other code in this file, because the main render loop's
+// initial synchronous call (see `init(); animate();` further down)
+// runs animate() -> animateECGRegionMarkers() once immediately,
+// before the rest of the script has executed. A `let` declared
+// later in the file would still be in its temporal dead zone at
+// that point, causing:
+//   ReferenceError: Cannot access 'ecgRegionMarkers' before initialization
+// This is the ONE authoritative ECG marker array; do not declare
+// it again anywhere else in this file.
+let ecgRegionMarkers = [];
+
 // ============================================================
 // ANATOMY / DISEASE KNOWLEDGE BASE
 // ============================================================
@@ -1163,6 +1176,16 @@ function animate(){
 
     /* Additive: animate the actual 3D AI risk location */
     animate3DAIRiskMarker();
+
+    /* Additive: animate the dedicated ECG CNN region markers
+       (separate system from the AI risk markers above). */
+    animateECGRegionMarkers();
+
+    /* Additive: animate the dedicated overall cardiovascular-risk
+       visualization (separate system from both the ECG markers above
+       and the legacy localized ai3DRiskGroup/aiMultiRiskMarkers).
+       Safely no-ops when there's no active risk group. */
+    animateCardiacRiskVisualization();
 
     if(heart){
 
@@ -2800,80 +2823,24 @@ function update3DRiskLabel() {
 /* ============================================================
    ADDITIVE AI CONNECTION HELPER
    Call this from the result returned by your Python/Flask AI model.
+
+   NOTE: the single authoritative handleAIRiskPrediction() lives
+   further down in this file (multi-region capable, built on top of
+   getAIRiskRegions()). A second, shadowed definition used to exist
+   here as well -- since JS function declarations simply overwrite
+   one another, that earlier one-region-only body never actually ran
+   and has been removed as dead code. Its single-region behavior is
+   fully covered by the remaining definition: getAIRiskRegions()
+   already reads result.region / result.area / result.cardiac_region
+   / result.affected_area (all the fields the old body checked) in
+   addition to the newer regions[]/affected_regions[] arrays, so
+   existing one-region backend responses keep working unchanged.
+   showDetectedCardiacLocation() below is kept as a small,
+   independently-callable single-region helper (see the console test
+   examples near the end of this file) even though the authoritative
+   handler itself now always goes through
+   showMultipleCardiacRiskLocations().
 ============================================================ */
-
-function handleAIRiskPrediction(result) {
-
-    if (!result) {
-        console.warn("AI prediction result is empty.");
-        return;
-    }
-
-    const risk =
-        result.risk === true ||
-        result.risk === "true" ||
-        result.prediction === "RISK" ||
-        result.prediction === "HIGH RISK";
-
-    if (!risk) {
-
-        hideAIRiskAlert();
-        return;
-    }
-
-    const region =
-        result.region ||
-        result.area ||
-        result.cardiac_region ||
-        result.affected_area;
-
-    const disease =
-        result.disease ||
-        result.condition ||
-        result.diagnosis ||
-        "Cardiac abnormality detected";
-
-    const riskLevel =
-        result.risk_level ||
-        result.riskLevel ||
-        result.level ||
-        "High Risk";
-
-    if (!region) {
-        console.warn(
-            "AI predicted a risk but did not provide a cardiac region."
-        );
-
-        showAIRiskAlert(
-            "Unknown",
-            disease,
-            riskLevel
-        );
-
-        sendAIRiskNotification(
-            "Unknown",
-            disease,
-            riskLevel
-        );
-
-        return;
-    }
-
-    /* Existing risk-location system handles the 3D anatomy selection */
-    showDetectedCardiacLocation(
-        region,
-        disease,
-        riskLevel
-    );
-
-    /* Browser notification */
-    sendAIRiskNotification(
-        region,
-        disease,
-        riskLevel
-    );
-}
-
 
 function showDetectedCardiacLocation(regionKey, diseaseName, riskLevel) {
     if (!regionKey) return;
@@ -3099,6 +3066,33 @@ if (
     );
 }
 
+/* ============================================================
+   HOISTED STATE — declared here, BEFORE init()/animate() is ever
+   called, to prevent temporal-dead-zone ReferenceErrors.
+   ------------------------------------------------------------
+   animate() runs synchronously the instant it's invoked below, and
+   its very first frame calls into animate3DAIRiskMarker() and
+   animateCardiacRiskVisualization(). Both reference these `let`
+   bindings directly in their guard clauses (e.g.
+   `if (!cardiacRiskVisualizationGroup) return;`), but the bindings
+   were declared further down the file -- after this call site -- so
+   on that very first synchronous frame they were still in the
+   temporal dead zone: referenced before their own declaration line
+   had executed. The try/catch below does catch the resulting
+   ReferenceError (so it doesn't cascade into every later line of
+   the script failing to run), but it still prints a real, avoidable
+   error to the console on every page load and skips the rest of
+   that first frame's work (heart rotation/pump, camera tween,
+   marker updates). These are the ONLY declarations of each of these
+   names -- moved, not duplicated; their original locations now just
+   contain a pointer comment.
+   ============================================================ */
+let aiMultiRiskMarkers = [];
+let aiMultiRiskLabels = [];
+let aiMultiRiskRegions = [];
+let aiMultiRiskData = [];
+let cardiacRiskVisualizationGroup = null;
+
 try {
     init();
     animate();
@@ -3137,10 +3131,10 @@ try {
    blink independently at every detected cardiac location.
 ============================================================ */
 
-let aiMultiRiskMarkers = [];
-let aiMultiRiskLabels = [];
-let aiMultiRiskRegions = [];
-let aiMultiRiskData = [];
+// aiMultiRiskMarkers / aiMultiRiskLabels / aiMultiRiskRegions / aiMultiRiskData
+// are declared earlier in the file now (before init()/animate() is called),
+// to avoid a temporal-dead-zone ReferenceError on the very first animation
+// frame — see the "HOISTED STATE" block above init()/animate().
 
 /* Return every region supplied by the AI/backend. */
 function getAIRiskRegions(result) {
@@ -3840,7 +3834,8 @@ function hideAIRiskAlert() {
 }
 
 /*
- * Override the AI result handler.
+ * The single authoritative AI result handler (see the note near the
+ * top of this file, where an earlier shadowed duplicate used to be).
  * Existing one-region backend responses continue to work.
  * New backend responses can send regions:[...].
  */
@@ -4033,7 +4028,1496 @@ function testMultiCardiacRisk(
     }
 }
 
+/* ============================================================
+   PTB-XL ARRHYTHMIA CNN -> METAVERSE CONNECTION (ADDITIVE)
+   ------------------------------------------------------------
+   This is a DEDICATED, SELF-CONTAINED ECG visualization system.
+   It is intentionally SEPARATE from the existing cardiac-risk
+   system above (#aiRiskAlert / handleAIRiskPrediction /
+   showMultipleCardiacRiskLocations / ai3DRiskGroup* /
+   aiMultiRiskMarkers). Nothing in this block ever calls into or
+   mutates that system, and nothing above this block is modified.
+   The only things reused from it are pure, read-only lookups
+   against the existing static anatomy data (findRiskAnchor,
+   getAnatomyByKey, chooseAIRiskView) -- not shared mutable state.
+
+   IMPORTANT MEDICAL LIMITATION: the PTB-XL CNN predicts diagnostic
+   CLASSES only (NORM, MI, STTC, CD, HYP). It does NOT localize an
+   exact coronary artery, myocardial segment, or physical lesion.
+   The backend's "metaverse_regions" field (see ARRHYTHMIA_REGION_MAP
+   in app.py) is a class-to-region VISUAL convention using the
+   Metaverse's own already-existing anatomy keys (LV, RV, RA, APEX)
+   -- it is not a claim of precise anatomical localization by the
+   model itself.
+============================================================ */
+
+/* Wait for the 3D heart model to finish its initial load before
+   placing any marker, so an early API response is never dropped. */
+function waitForHeartModelReady(callback) {
+
+    let attempts = 0;
+
+    const timer = setInterval(function () {
+
+        attempts++;
+
+        if (selectableModel) {
+            clearInterval(timer);
+            callback();
+            return;
+        }
+
+        if (attempts > 150) {
+            clearInterval(timer);
+            console.warn(
+                "Timed out waiting for the heart model before " +
+                "applying the PTB-XL ECG result."
+            );
+        }
+
+    }, 100);
+}
+
+/* The five real PTB-XL output classes -- used only to safely
+   recognize/ignore anything unexpected, never to change the model. */
+const KNOWN_PTBXL_CLASSES = ["NORM", "MI", "STTC", "CD", "HYP"];
+
+/* Current prediction state, kept for debugging/inspection.
+   { predicted_classes, regions, confidence, timestamp } | null */
+let currentPTBXLPredictionState = null;
+
+/* ------------------------------------------------------------
+   DEDICATED ECG 3D REGION MARKERS
+   ------------------------------------------------------------
+   Deliberately drawn as thin, hollow, non-filled RINGS (not solid
+   discs/spheres) that frame an existing anatomy marker rather than
+   sit on top of it, and use amber/orange (0xffb020) -- visually
+   distinct from the cardiac-risk system's red (0xff2222) -- so the
+   two are never confused. This never touches ai3DRiskGroup*,
+   aiMultiRiskMarkers, or any cardiac-risk marker state.
+
+   NOTE: `ecgRegionMarkers` itself is declared at the very top of
+   this <script> block (not here) -- see the comment there for why.
+   This is still the one and only declaration of that variable.
+   ------------------------------------------------------------ */
+
+function clearECGRegionMarkers() {
+
+    ecgRegionMarkers.forEach(function (m) {
+
+        if (selectableModel && m.group.parent) {
+            selectableModel.remove(m.group);
+        }
+
+        m.group.traverse(function (child) {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(function (mat) { mat.dispose(); });
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    });
+
+    ecgRegionMarkers = [];
+}
+
+function createECGRegionMarker(anchorLocal, key) {
+
+    const group = new THREE.Group();
+
+    // Outer ring: hollow so the existing lettered/numbered anatomy
+    // marker at this same anchor stays fully readable at its center.
+    // depthTest:false + a high renderOrder ensure this ring always
+    // draws on top of the heart mesh itself (not behind it), so it
+    // can never be silently hidden by solid heart geometry between
+    // it and the camera. Orientation (rotation.x) is left exactly
+    // as before -- unverified visually in this environment, so it
+    // is not changed blindly.
+    const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.16, 0.185, 48),
+        new THREE.MeshBasicMaterial({
+            color: 0xffb020,
+            transparent: true,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: false
+        })
+    );
+    ring.renderOrder = 999;
+    ring.rotation.x = Math.PI / 2;
+    group.add(ring);
+
+    const light = new THREE.PointLight(0xffb020, 1.3, 0.85);
+    group.add(light);
+
+    group.position.copy(anchorLocal);
+
+    return {
+        key: key,
+        group: group,
+        ring: ring,
+        light: light,
+        pulsePhase: Math.random() * Math.PI * 2
+    };
+}
+
+/* Builds one ring marker per region key, using the SAME anchors the
+   existing anatomy markers already use (found via the existing,
+   read-only findRiskAnchor helper) -- no new anchor data invented.
+   Regions with no anchor in the currently-loaded view are skipped
+   for the 3D marker only; they still appear in the text panel. */
+function buildECGRegionMarkers(regionKeys) {
+
+    clearECGRegionMarkers();
+
+    if (!selectableModel || !Array.isArray(regionKeys)) return;
+
+    regionKeys.forEach(function (key) {
+
+        const anchor = findRiskAnchor(key);
+
+        if (!anchor) return;
+
+        const marker = createECGRegionMarker(anchor, key);
+
+        selectableModel.add(marker.group);
+
+        ecgRegionMarkers.push(marker);
+    });
+}
+
+function animateECGRegionMarkers() {
+
+    if (ecgRegionMarkers.length === 0) return;
+
+    const t = performance.now() * 0.004;
+
+    ecgRegionMarkers.forEach(function (m) {
+
+        const phase = m.pulsePhase;
+        const blink = 0.45 + (Math.sin(t * 2.4 + phase) + 1) * 0.275;
+        const scale = 1 + (Math.sin(t * 1.6 + phase) + 1) * 0.16;
+
+        m.ring.material.opacity = blink;
+        m.ring.scale.set(scale, scale, scale);
+
+        if (m.light) m.light.intensity = 1.0 + blink * 0.7;
+    });
+}
+
+/* ------------------------------------------------------------
+   DEDICATED OVERALL CARDIOVASCULAR-RISK VISUALIZATION (additive,
+   new system -- separate from everything else in this file):
+
+   - separate from ecgRegionMarkers (the amber PTB-XL per-region
+     rings above): that system marks WHERE the ECG CNN's finding
+     maps to; this one never claims a location.
+   - separate from ai3DRiskGroup / aiMultiRiskMarkers (the legacy
+     single/multi-anchor red "detected cardiac location" system
+     elsewhere in this file, driven by handleAIRiskPrediction /
+     showMultipleCardiacRiskLocations): that system is for a model
+     that reports a specific anatomical region + disease. The "AI
+     Cardiovascular Risk Assessment" model (age/BP/cholesterol/etc.
+     -> Low/Moderate/High) does NOT localize a finding to any
+     chamber, so this visualization deliberately never attaches to a
+     single anatomy anchor -- it wraps the WHOLE heart instead, as a
+     hollow, glowing halo, communicating "elevated overall risk",
+     never "lesion found here".
+
+   Built from the live bounding sphere of the currently-loaded heart
+   model (selectableModel), so it scales correctly at any view/zoom.
+   Rendered with depthTest/depthWrite disabled and a high renderOrder
+   so the hollow shell always draws above the heart surface without
+   ever hiding it or the anatomy markers under it.
+   ------------------------------------------------------------ */
+// cardiacRiskVisualizationGroup is declared earlier in the file now
+// (before init()/animate() is called), to avoid a temporal-dead-zone
+// ReferenceError on the very first animation frame — see the
+// "HOISTED STATE" block above init()/animate().
+let cardiacRiskVisualizationMeshes = [];
+let cardiacRiskVisualizationLevel = "low"; // "low" | "moderate" | "high"
+
+function clearCardiacRiskVisualization() {
+
+    if (cardiacRiskVisualizationGroup) {
+
+        if (selectableModel && cardiacRiskVisualizationGroup.parent) {
+            selectableModel.remove(cardiacRiskVisualizationGroup);
+        }
+
+        cardiacRiskVisualizationGroup.traverse(function (child) {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(function (mat) { mat.dispose(); });
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    }
+
+    cardiacRiskVisualizationGroup = null;
+    cardiacRiskVisualizationMeshes = [];
+}
+
+/* Local-space bounding-sphere radius of the currently-loaded heart,
+   so the risk halo always wraps the actual model regardless of view
+   or patient-driven scale -- never a guessed constant. */
+function getSelectableModelLocalRadius() {
+
+    if (!selectableModel) return 1;
+
+    const box = new THREE.Box3().setFromObject(selectableModel);
+    if (box.isEmpty()) return 1;
+
+    const sphere = box.getBoundingSphere(new THREE.Sphere());
+
+    const worldScale = new THREE.Vector3();
+    selectableModel.getWorldScale(worldScale);
+    const maxScale = Math.max(worldScale.x, worldScale.y, worldScale.z) || 1;
+
+    return sphere.radius / maxScale;
+}
+
+/* Builds the hollow halo for "moderate" or "high" risk. "low" risk
+   builds nothing (clearCardiacRiskVisualization() already ran). */
+function buildCardiacRiskVisualization(level) {
+
+    clearCardiacRiskVisualization();
+
+    cardiacRiskVisualizationLevel = level;
+
+    if (!selectableModel || level === "low") return;
+
+    const isHigh = level === "high";
+    const color = isHigh ? 0xff9500 : 0xffcc33; // orange/amber (high) vs softer amber (moderate)
+
+    const localRadius = getSelectableModelLocalRadius();
+    const baseRadius = Math.max(0.32, localRadius * 1.14);
+
+    const group = new THREE.Group();
+    group.renderOrder = 9999;
+
+    // Two concentric hollow wireframe shells -- glows around the
+    // heart rather than covering it, always drawn above the surface.
+    [0, 1].forEach(function (i) {
+
+        const r = baseRadius * (1 + i * 0.1);
+
+        const mat = new THREE.MeshBasicMaterial({
+            color: color,
+            wireframe: true,
+            transparent: true,
+            opacity: isHigh ? (0.5 - i * 0.16) : (0.28 - i * 0.1),
+            depthTest: false,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(r, 24, 16),
+            mat
+        );
+        mesh.renderOrder = 9999;
+
+        group.add(mesh);
+        cardiacRiskVisualizationMeshes.push({
+            mesh: mesh,
+            baseOpacity: mat.opacity,
+            isRing: false,
+            phase: i
+        });
+    });
+
+    // Equatorial ring so the halo reads clearly from more camera
+    // angles, not just ones that show the wireframe spheres well.
+    const ringMat = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: isHigh ? 0.55 : 0.3,
+        side: THREE.DoubleSide,
+        depthTest: false,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+    });
+    const ring = new THREE.Mesh(
+        new THREE.RingGeometry(baseRadius * 0.97, baseRadius * 1.02, 64),
+        ringMat
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.renderOrder = 9999;
+    group.add(ring);
+    cardiacRiskVisualizationMeshes.push({
+        mesh: ring,
+        baseOpacity: ringMat.opacity,
+        isRing: true,
+        phase: 0
+    });
+
+    const light = new THREE.PointLight(color, isHigh ? 2.2 : 1.1, baseRadius * 3.4);
+    group.add(light);
+    group.userData.light = light;
+    group.userData.isHigh = isHigh;
+
+    selectableModel.add(group);
+    cardiacRiskVisualizationGroup = group;
+}
+
+/* Called once per frame from the project's single existing render
+   loop (see animate()) -- creates no timer/loop of its own, and
+   safely no-ops when there's no active risk group. */
+function animateCardiacRiskVisualization() {
+
+    if (!cardiacRiskVisualizationGroup) return;
+
+    const isHigh = cardiacRiskVisualizationGroup.userData.isHigh;
+    const t = performance.now() * (isHigh ? 0.0035 : 0.0016);
+    const blink = 0.5 + (Math.sin(t * 2.2) + 1) * 0.25;
+
+    cardiacRiskVisualizationMeshes.forEach(function (entry) {
+
+        entry.mesh.material.opacity = entry.baseOpacity * (0.55 + blink * 0.6);
+
+        if (!entry.isRing) {
+            const scale = 1 + (Math.sin(t * 1.6 + entry.phase) + 1) * (isHigh ? 0.05 : 0.025);
+            entry.mesh.scale.set(scale, scale, scale);
+        }
+    });
+
+    const light = cardiacRiskVisualizationGroup.userData.light;
+    if (light) {
+        light.intensity = (isHigh ? 1.6 : 0.8) + blink * (isHigh ? 1.2 : 0.5);
+    }
+}
+
+/* ------------------------------------------------------------
+   OVERALL-HEART CAMERA FOCUS for cardiovascular risk (separate from
+   the existing chamber-specific tweenCamera() calls in
+   activateRiskMarker()/showMultipleCardiacRiskLocations() -- those
+   look AT a specific anatomy anchor; this one always looks at the
+   same overview target the heart is already framed around, just
+   somewhat closer, so it reads as "focus on the whole heart", never
+   "focus on a chamber"). Reuses the project's single existing
+   tweenCamera()/updateCameraTween() system -- no new tween/animation
+   loop is created, and the camera never teleports.
+
+   Only engages while in the "overview" framing, so it never fights
+   the Exterior/Interior views' own fixed camera setup; in those
+   views the risk state is still fully visible via the halo + status
+   panel, just without an extra camera move.
+   ------------------------------------------------------------ */
+let cardiacRiskCameraFocused = false;
+
+function focusCameraForCardiacRisk() {
+
+    if (activeView !== "overview" || !camera || !controls) return;
+
+    const target = DEFAULT_FRAMING.overview.target.clone();
+    const overviewPos = DEFAULT_FRAMING.overview.pos.clone();
+
+    // Move ~28% closer along the existing overview viewing direction
+    // -- keeps the complete heart in frame (same look-at target,
+    // same angle) while making the risk halo clearly more prominent.
+    // Deliberately modest so it never feels like an aggressive/
+    // chamber-style zoom.
+    const focusedPos = target.clone().lerp(overviewPos, 0.72);
+
+    tweenCamera(focusedPos, target, 1100);
+    cardiacRiskCameraFocused = true;
+}
+
+function restoreCameraFromCardiacRiskFocus() {
+
+    if (!cardiacRiskCameraFocused) return;
+
+    if (activeView === "overview" && camera && controls) {
+        tweenCamera(
+            DEFAULT_FRAMING.overview.pos.clone(),
+            DEFAULT_FRAMING.overview.target.clone(),
+            1100
+        );
+    }
+
+    cardiacRiskCameraFocused = false;
+}
+
+/* ------------------------------------------------------------
+   DEDICATED ECG CNN STATUS PANEL (additive DOM element, separate
+   from #aiRiskAlert). Always visible -- it explicitly shows
+   waiting / normal / abnormal / unavailable, so it never looks
+   like the Metaverse simply failed to receive data.
+
+   POSITIONING: this panel (and the new #cardiacRiskStatusPanel
+   below it) lives inside one shared, flex-column HUD stack
+   (#cardiacHudStack) instead of being independently positioned. A
+   fixed "bottom-left" guess used to be able to overlap the Heart
+   Information panel (#infoCard) whenever that panel grew taller
+   than expected. Now, positionCardiacHUD() reads the LIVE bounding
+   boxes of #topButtons, #surgeryMenu, #sideWidgets, #infoCard and
+   #bottomStatBar every time it runs, and docks the whole stack into
+   whichever safe vertical gap actually exists on the right-hand
+   rail between the top chrome and whatever occupies the rail below
+   it. If that gap is too small, both panels shrink into a compact
+   layout; if there's no usable gap at all, the stack falls back to
+   a slot directly above the bottom stat bar. ResizeObservers/
+   MutationObservers on that same chrome keep it re-anchored whenever
+   the surgery menu opens/closes, the info card's content changes
+   height (vitals <-> anatomy detail), or the window resizes -- so
+   the panel can never overlap the heart, the numbered anatomy
+   markers, the Heart Information card, or the navigation buttons, at
+   any screen size, in any ECG mode. Visual style (colors, blur,
+   border, font) is unchanged -- only placement/layout. Exactly one
+   panel instance exists (#ecgCnnStatusPanel), created lazily by
+   getECGStatusPanel().
+   ------------------------------------------------------------ */
+let cardiacHudStackEl = null;
+let hudObserversAttached = false;
+
+function getCardiacHudStack() {
+
+    if (cardiacHudStackEl) return cardiacHudStackEl;
+
+    const stack = document.createElement("div");
+    stack.id = "cardiacHudStack";
+    stack.style.cssText = `
+        position: fixed;
+        top: 28px;
+        right: 20px;
+        z-index: 9998;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 280px;
+        max-width: calc(100vw - 40px);
+        overflow: hidden;
+        pointer-events: none;
+        transition: top .2s ease, bottom .2s ease;
+    `;
+    document.body.appendChild(stack);
+
+    cardiacHudStackEl = stack;
+    return stack;
+}
+
+/* Watches every piece of chrome the stack has to avoid, so
+   positionCardiacHUD() re-runs whenever any of them changes size or
+   visibility (surgery menu opening, info card content swapping
+   between vitals/anatomy detail, responsive reflow, etc.) -- purely
+   additive, doesn't touch how those elements already behave. */
+function attachCardiacHudObservers() {
+
+    if (hudObserversAttached) return;
+    hudObserversAttached = true;
+
+    window.addEventListener("resize", positionCardiacHUD);
+    window.addEventListener("orientationchange", positionCardiacHUD);
+
+    const watchIds = ["topButtons", "surgeryMenu", "sideWidgets", "infoCard", "bottomStatBar"];
+
+    if (typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(function () { positionCardiacHUD(); });
+        watchIds.forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) ro.observe(el);
+        });
+        // Also watch the stack's own content (e.g. the risk panel's
+        // detail text changing) so growth/shrink never spills out.
+        ro.observe(getCardiacHudStack());
+    }
+
+    // Belt-and-suspenders: also catch class/style toggles (e.g. the
+    // surgery menu's "open" class) that don't always fire a resize
+    // on the element itself immediately.
+    if (typeof MutationObserver !== "undefined") {
+        const mo = new MutationObserver(function () { positionCardiacHUD(); });
+        watchIds.forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) mo.observe(el, { attributes: true, attributeFilter: ["class", "style"], childList: true, subtree: true });
+        });
+    }
+}
+
+function setHudPanelCompact(panelEl, compact) {
+
+    if (!panelEl) return;
+
+    const title = panelEl.querySelector(".hudPanelTitle");
+    const body = panelEl.querySelector(".hudPanelBody");
+    const detail = panelEl.querySelector(".hudPanelDetail");
+
+    panelEl.style.padding = compact ? "8px 12px" : "12px 16px";
+    if (title) {
+        title.style.fontSize = compact ? "9.5px" : "11px";
+        title.style.marginBottom = compact ? "4px" : "8px";
+    }
+    if (body) body.style.fontSize = compact ? "12px" : "14px";
+    if (detail) {
+        detail.style.fontSize = compact ? "10px" : "11.5px";
+        detail.style.marginTop = compact ? "3px" : "6px";
+    }
+}
+
+/* Reads the live bounding boxes of the surrounding HUD chrome and
+   docks the whole HUD stack (ECG panel + cardiovascular-risk panel)
+   into whatever safe vertical gap exists on the right-hand rail,
+   between the top chrome and whatever sits below it -- never
+   guessing a fixed pixel position, never overlapping the heart, the
+   anatomy markers, the Heart Information card, or the navigation
+   buttons. */
+function positionCardiacHUD() {
+
+    if (!cardiacHudStackEl) return;
+
+    const gap = 14;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    function liveRect(id) {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const cs = window.getComputedStyle(el);
+        if (cs.display === "none" || cs.visibility === "hidden" || parseFloat(cs.opacity) === 0) return null;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) return null;
+        return r;
+    }
+
+    const topButtonsRect = liveRect("topButtons");
+    const surgeryMenuRect = liveRect("surgeryMenu");
+    const sideWidgetsRect = liveRect("sideWidgets");
+    const infoCardRect = liveRect("infoCard");
+    const bottomStatBarRect = liveRect("bottomStatBar");
+
+    // Top of the safe rail: below the top buttons and (if open) the
+    // surgery dropdown, whichever extends further down.
+    let upperBound = gap;
+    if (topButtonsRect) upperBound = Math.max(upperBound, topButtonsRect.bottom + gap);
+    if (surgeryMenuRect) upperBound = Math.max(upperBound, surgeryMenuRect.bottom + gap);
+
+    // Bottom of the safe rail: whatever sits highest among the
+    // sync/live widgets, the Heart Information card, and the bottom
+    // stat bar.
+    let lowerBound = vh - gap;
+    [sideWidgetsRect, infoCardRect, bottomStatBarRect].forEach(function (r) {
+        if (r) lowerBound = Math.min(lowerBound, r.top - gap);
+    });
+
+    const stackWidth = Math.max(220, Math.min(280, vw * 0.22));
+    const rightInset = 20;
+    const availableHeight = lowerBound - upperBound;
+
+    // Two panels need more room than one -- compact both once the
+    // rail gets tight (smaller screens, or the surgery menu open) so
+    // content never has to spill into the space it's meant to avoid.
+    const compact = availableHeight < 260;
+    setHudPanelCompact(document.getElementById("ecgCnnStatusPanel"), compact);
+    setHudPanelCompact(document.getElementById("cardiacRiskStatusPanel"), compact);
+
+    cardiacHudStackEl.style.right = rightInset + "px";
+    cardiacHudStackEl.style.left = "auto";
+    cardiacHudStackEl.style.width = Math.round(stackWidth) + "px";
+
+    if (availableHeight >= 90) {
+        // Fits in the preferred rail between the top chrome and
+        // whatever occupies the right side below it.
+        cardiacHudStackEl.style.top = Math.round(upperBound) + "px";
+        cardiacHudStackEl.style.bottom = "auto";
+        cardiacHudStackEl.style.maxHeight = Math.round(availableHeight) + "px";
+    } else {
+        // No usable gap on the right rail (very small viewport, or
+        // the surgery menu is open and eating the space) -- fall
+        // back to a slot anchored above the bottom stat bar instead,
+        // still on the right, still clear of the heart.
+        const bottomLimit = bottomStatBarRect ? bottomStatBarRect.top - gap : vh - gap;
+        cardiacHudStackEl.style.top = "auto";
+        cardiacHudStackEl.style.bottom = Math.round(vh - bottomLimit) + "px";
+        cardiacHudStackEl.style.maxHeight = "230px";
+    }
+}
+
+let ecgStatusPanelEl = null;
+
+function getECGStatusPanel() {
+
+    if (ecgStatusPanelEl) return ecgStatusPanelEl;
+
+    const stack = getCardiacHudStack();
+
+    const panel = document.createElement("div");
+    panel.id = "ecgCnnStatusPanel";
+
+    panel.style.cssText = `
+        position: static;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: rgba(0,10,16,.74);
+        border: 1.5px solid rgba(0,229,255,.5);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 0 22px rgba(0,229,255,.18);
+        color: #e8feff;
+        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+        text-align: center;
+        flex-shrink: 0;
+        transition: border-color .25s ease, box-shadow .25s ease;
+    `;
+
+    const title = document.createElement("div");
+    title.className = "hudPanelTitle";
+    title.textContent = "ECG CNN STATUS";
+    title.style.cssText =
+        "font-size:11px;font-weight:800;letter-spacing:1px;" +
+        "color:#00e5ff;text-transform:uppercase;margin-bottom:8px;";
+
+    const body = document.createElement("div");
+    body.id = "ecgCnnStatusBody";
+    body.className = "hudPanelBody";
+    body.style.cssText = "font-size:14px;font-weight:700;line-height:1.4;";
+
+    const detail = document.createElement("div");
+    detail.id = "ecgCnnStatusDetail";
+    detail.className = "hudPanelDetail";
+    detail.style.cssText =
+        "font-size:11.5px;color:#8fd8f5;margin-top:6px;" +
+        "line-height:1.5;white-space:pre-line;";
+
+    panel.appendChild(title);
+    panel.appendChild(body);
+    panel.appendChild(detail);
+    stack.appendChild(panel);
+
+    ecgStatusPanelEl = panel;
+
+    positionCardiacHUD();
+    attachCardiacHudObservers();
+    // One more pass shortly after creation in case surrounding
+    // chrome shifts slightly once web fonts / layout finish settling.
+    window.setTimeout(positionCardiacHUD, 250);
+
+    return panel;
+}
+
+function setECGStatusPanel(mode, bodyText, detailText, accentColor) {
+
+    const panel = getECGStatusPanel();
+    const body = panel.querySelector("#ecgCnnStatusBody");
+    const detail = panel.querySelector("#ecgCnnStatusDetail");
+
+    body.textContent = bodyText;
+    body.style.color = accentColor || "#ffffff";
+
+    detail.textContent = detailText || "";
+    detail.style.display = detailText ? "block" : "none";
+
+    panel.style.borderColor = accentColor ?
+        accentColor.replace(")", ",0.6)").replace("rgb", "rgba") :
+        "rgba(0,229,255,.5)";
+    panel.dataset.mode = mode;
+
+    // Content length can change between modes (e.g. abnormal adds
+    // finding/class/confidence/region lines) which changes panel
+    // height -- reposition the whole stack so it never grows/shrinks
+    // into a spot that overlaps the anatomy markers, the heart, the
+    // Heart Information card, or the navigation buttons.
+    positionCardiacHUD();
+}
+
+/* ------------------------------------------------------------
+   DEDICATED CARDIOVASCULAR-RISK STATUS PANEL (additive DOM element,
+   separate from #ecgCnnStatusPanel and from the legacy #aiRiskAlert).
+   Shows the exact "AI Cardiovascular Risk Assessment" dashboard
+   result (Low / Moderate / High, with its percentage) -- never an
+   anatomical finding. Lives inside the shared HUD stack above.
+   Exactly one panel instance exists (#cardiacRiskStatusPanel),
+   created lazily by getCardiacRiskStatusPanel().
+   ------------------------------------------------------------ */
+let cardiacRiskStatusPanelEl = null;
+
+function getCardiacRiskStatusPanel() {
+
+    if (cardiacRiskStatusPanelEl) return cardiacRiskStatusPanelEl;
+
+    const stack = getCardiacHudStack();
+
+    const panel = document.createElement("div");
+    panel.id = "cardiacRiskStatusPanel";
+
+    panel.style.cssText = `
+        position: static;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 16px;
+        border-radius: 14px;
+        background: rgba(0,10,16,.74);
+        border: 1.5px solid rgba(255,176,32,.5);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 0 22px rgba(255,176,32,.16);
+        color: #e8feff;
+        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+        text-align: center;
+        flex-shrink: 0;
+        transition: border-color .25s ease, box-shadow .25s ease;
+    `;
+
+    const title = document.createElement("div");
+    title.className = "hudPanelTitle";
+    title.textContent = "CARDIOVASCULAR RISK";
+    title.style.cssText =
+        "font-size:11px;font-weight:800;letter-spacing:1px;" +
+        "color:#ffb020;text-transform:uppercase;margin-bottom:8px;";
+
+    const body = document.createElement("div");
+    body.id = "cardiacRiskStatusBody";
+    body.className = "hudPanelBody";
+    body.style.cssText = "font-size:14px;font-weight:700;line-height:1.4;";
+
+    const detail = document.createElement("div");
+    detail.id = "cardiacRiskStatusDetail";
+    detail.className = "hudPanelDetail";
+    detail.style.cssText =
+        "font-size:11.5px;color:#ffd699;margin-top:6px;" +
+        "line-height:1.5;white-space:pre-line;";
+
+    panel.appendChild(title);
+    panel.appendChild(body);
+    panel.appendChild(detail);
+    stack.appendChild(panel);
+
+    cardiacRiskStatusPanelEl = panel;
+
+    positionCardiacHUD();
+    attachCardiacHudObservers();
+    window.setTimeout(positionCardiacHUD, 250);
+
+    return panel;
+}
+
+function setCardiacRiskStatusPanel(mode, bodyText, detailText, accentColor) {
+
+    const panel = getCardiacRiskStatusPanel();
+    const body = panel.querySelector("#cardiacRiskStatusBody");
+    const detail = panel.querySelector("#cardiacRiskStatusDetail");
+
+    body.textContent = bodyText;
+    body.style.color = accentColor || "#ffffff";
+
+    detail.textContent = detailText || "";
+    detail.style.display = detailText ? "block" : "none";
+
+    panel.style.borderColor = accentColor ?
+        accentColor.replace(")", ",0.6)").replace("rgb", "rgba") :
+        "rgba(255,176,32,.5)";
+    panel.dataset.mode = mode;
+
+    // Content length can change between risk levels -- reposition
+    // the whole stack so it never overlaps the anatomy markers, the
+    // heart, the ECG panel, the Heart Information card, or the
+    // navigation buttons.
+    positionCardiacHUD();
+}
+
+/* Updates the existing bottom stat bar's "AI PREDICTION" pill
+   (#statPrediction) with the ACTUAL cardiovascular-risk result. This
+   pill used to only ever show a hardcoded/demo value from the
+   patient-card presets (see selectPatient() -> cfg.prediction); once
+   a real "Analyze Cardiac Risk" result arrives it always overwrites
+   that with the real classification, since the dashboard is the
+   source of truth. */
+function updateBottomAIPredictionPill(text, color) {
+
+    const el = document.getElementById("statPrediction");
+    if (!el) return;
+
+    el.textContent = text;
+    el.style.color = color || "";
+    el.classList.toggle("good", !color); // keep the existing "good" styling only for the plain/low-risk case
+}
+
+/* Section: NO cardiovascular-risk result yet -- shown immediately on
+   load, before "Analyze Cardiac Risk" has ever been run. Never a
+   fabricated risk level. */
+function setCardiacRiskWaitingState() {
+    clearCardiacRiskVisualization();
+    setCardiacRiskStatusPanel(
+        "waiting",
+        "No risk data yet",
+        "Run \"Analyze Cardiac Risk\" on the dashboard",
+        "#ffd699"
+    );
+}
+
+/* Section: LOW risk -- explicitly clears any previous risk
+   visualization/alert and restores the normal camera framing if a
+   HIGH-risk focus was previously applied; does not touch ECG
+   markers or the legacy ai3DRiskGroup/aiMultiRiskMarkers system. */
+function setCardiacRiskLowState(probabilityText) {
+    clearCardiacRiskVisualization();
+    restoreCameraFromCardiacRiskFocus();
+    setCardiacRiskStatusPanel(
+        "low",
+        (probabilityText ? probabilityText + " \u2014 " : "") + "LOW RISK",
+        "No elevated cardiovascular risk detected",
+        "#00ff88"
+    );
+    updateBottomAIPredictionPill("LOW RISK", null);
+}
+
+/* Section: MODERATE risk -- a softer amber halo, explicitly NOT
+   framed as a diagnosed disease, and no aggressive camera move (see
+   focusCameraForCardiacRisk() docs -- only HIGH risk pulls the
+   camera in; moderate keeps/returns to the normal overview so it
+   isn't presented as urgently as a diagnosed condition). */
+function setCardiacRiskModerateState(probabilityText) {
+    waitForHeartModelReady(function () {
+        buildCardiacRiskVisualization("moderate");
+    });
+    restoreCameraFromCardiacRiskFocus();
+    setCardiacRiskStatusPanel(
+        "moderate",
+        (probabilityText ? probabilityText + " \u2014 " : "") + "MODERATE RISK",
+        "Overall cardiovascular risk visualization (not a localized finding)",
+        "#ffcc33"
+    );
+    updateBottomAIPredictionPill("MODERATE RISK", "#ffcc33");
+}
+
+/* Section: HIGH / ELEVATED risk -- prominent pulsing orange/amber
+   whole-heart halo, explicit "HIGH CARDIOVASCULAR RISK" text, and a
+   smooth (never instant) camera focus toward the overall heart. */
+function setCardiacRiskHighState(probabilityText) {
+    waitForHeartModelReady(function () {
+        buildCardiacRiskVisualization("high");
+    });
+    focusCameraForCardiacRisk();
+    setCardiacRiskStatusPanel(
+        "high",
+        (probabilityText ? probabilityText + " \u2014 " : "") + "HIGH RISK",
+        "\u26A0 HIGH CARDIOVASCULAR RISK\nOverall risk visualization (not a localized finding)",
+        "#ff9500"
+    );
+    updateBottomAIPredictionPill("HIGH RISK", "#ff9500");
+}
+
+/* Section: risk API failure / success:false. */
+function setCardiacRiskUnavailableState() {
+    clearCardiacRiskVisualization();
+    restoreCameraFromCardiacRiskFocus();
+    setCardiacRiskStatusPanel(
+        "unavailable",
+        "\u26D4 RISK PREDICTION UNAVAILABLE",
+        "",
+        "#ff4d4d"
+    );
+    updateBottomAIPredictionPill("UNAVAILABLE", "#ff4d4d");
+}
+
+/* ------------------------------------------------------------
+   Single entry point for driving the cardiovascular-risk
+   visualization from a dashboard /api/cardiac-risk result. Reuses
+   the dashboard's own Low/Moderate/High classification (riskLevel)
+   as the source of truth rather than re-deriving it here, so the
+   Metaverse can never disagree with what the dashboard displayed.
+   probability: number (0-100) | null/undefined
+   riskLevel:   "Low Risk" | "Moderate Risk" | "High Risk" (exact
+                dashboard string) -- matched case-insensitively.
+   ------------------------------------------------------------ */
+let currentCardiovascularRisk = null; // { probability, riskLevel, prediction, timestamp } | null
+
+function setCardiacRiskState(riskLevel, probability, prediction, timestamp) {
+
+    currentCardiovascularRisk = {
+        probability: Number(probability),
+        riskLevel: riskLevel,
+        prediction: prediction || null,
+        timestamp: timestamp || Date.now()
+    };
+
+    const probabilityValue = Number(probability);
+    const probabilityText =
+        Number.isFinite(probabilityValue) ?
+            probabilityValue.toFixed(2) + "%" :
+            null;
+
+    const normalized = String(riskLevel || "").toLowerCase();
+
+    if (normalized.indexOf("high") !== -1 || normalized.indexOf("elevated") !== -1) {
+        setCardiacRiskHighState(probabilityText);
+    } else if (normalized.indexOf("moderate") !== -1) {
+        setCardiacRiskModerateState(probabilityText);
+    } else if (normalized.indexOf("low") !== -1) {
+        setCardiacRiskLowState(probabilityText);
+    } else {
+        console.warn("Unrecognized cardiovascular risk level:", riskLevel);
+        setCardiacRiskUnavailableState();
+    }
+}
+
+/* Section 12: initial/no-data state -- shown immediately on load,
+   before any fetch or broadcast has resolved. Never a fabricated
+   abnormality, never stale data. */
+function setECGWaitingState() {
+    clearECGRegionMarkers();
+    setECGStatusPanel(
+        "waiting",
+        "⏳ WAITING FOR ECG PREDICTION",
+        "",
+        "#8fd8f5"
+    );
+}
+
+/* Section 14: API failure / success:false. */
+function setECGUnavailableState() {
+    clearECGRegionMarkers();
+    setECGStatusPanel(
+        "unavailable",
+        "⛔ ECG PREDICTION UNAVAILABLE",
+        "",
+        "#ff4d4d"
+    );
+}
+
+/* Section 2: NORM -- clearly visible normal state, not just "nothing
+   happening". Clears every ECG marker first. */
+function setECGNormalState() {
+    clearECGRegionMarkers();
+    setECGStatusPanel(
+        "normal",
+        "✅ NORMAL ECG",
+        "No ECG abnormality detected",
+        "#00ff88"
+    );
+}
+
+/* Section 3/5/6/10/13/15: one or more abnormal classes. Clears
+   previous ECG markers first (via buildECGRegionMarkers ->
+   clearECGRegionMarkers), then places a ring marker per mapped
+   region so multiple regions can highlight simultaneously. The
+   panel explicitly separates what the CNN actually found from the
+   visualization convention applied to it, so the two are never
+   conflated, and shows the real class code + real confidence
+   (never fabricated):
+     "ECG CNN Finding:"  -- the real predicted rhythm/disease text
+     "Class:"             -- the real predicted_classes, e.g. "MI, STTC"
+     "Confidence:"        -- the real CNN confidence for this record
+     "Visualization:"     -- the mapped anatomy region(s), which is a
+                             VISUALIZATION REGION convention (see
+                             ARRHYTHMIA_REGION_MAP in app.py), not a
+                             claim that the CNN itself localized a
+                             lesion there. */
+function setECGAbnormalState(predictedClasses, metaverseRegions, meta) {
+
+    buildECGRegionMarkers(metaverseRegions);
+
+    const labelNames = metaverseRegions.map(function (key) {
+        const anatomy = getAnatomyByKey(key);
+        return (anatomy && anatomy.name) ?
+            anatomy.name + " (" + key + ")" :
+            key;
+    });
+
+    const confidenceValue = Number(meta && meta.confidence);
+
+    const confidenceText =
+        Number.isFinite(confidenceValue) ?
+            confidenceValue.toFixed(1) + "%" :
+            "unavailable";
+
+    const bodyText = "⚠ ABNORMAL ECG";
+
+    const findingText =
+        "ECG CNN Finding: " +
+        ((meta && meta.disease) ?
+            meta.disease :
+            predictedClasses.join(", "));
+
+    const classText =
+        "Class: " + predictedClasses.join(", ");
+
+    const confidenceLine =
+        "Confidence: " + confidenceText;
+
+    const visualizationText =
+        "Visualization Region: " +
+        (labelNames.length ?
+            labelNames.join(", ") :
+            "no single mapped region for this class");
+
+    const detailText =
+        findingText + "\n" +
+        classText + "\n" +
+        confidenceLine + "\n" +
+        visualizationText;
+
+    setECGStatusPanel("abnormal", bodyText, detailText, "#ffb020");
+}
+
+/* ------------------------------------------------------------
+   updateMetaverseFromPrediction(predictedClasses, metaverseRegions, meta)
+   ------------------------------------------------------------
+   Single entry point for driving the DEDICATED ECG visualization
+   from a PTB-XL CNN result:
+
+     1/2. Stops/removes previous abnormal animations & highlighting
+        -> every state setter above starts with clearECGRegionMarkers().
+     3/4/5. Reads ALL predicted classes and highlights/blinks every
+        corresponding region simultaneously -> setECGAbnormalState
+        builds one ring marker per entry in metaverseRegions.
+     6. If NORM is the only class (or nothing was predicted): clears
+        all abnormal highlighting and shows the explicit normal
+        state -> setECGNormalState().
+     7. "Prediction unavailable" is handled by the caller
+        (handleIncomingArrhythmiaResult's catch block / the
+        "ptbxl_error" branch of the BroadcastChannel listener) via
+        setECGUnavailableState(), not here.
+     8/9. Avoid duplicate listeners/animation loops -> this function
+        attaches no new listeners or timers of its own each call;
+        animateECGRegionMarkers() is called once per frame from the
+        project's single existing render loop (see animate()).
+
+   Unknown classes are ignored safely with a console warning rather
+   than throwing or highlighting anything.
+
+   predictedClasses: array of PTB-XL class codes, e.g. ["MI","STTC"]
+   metaverseRegions: array of existing Metaverse anatomy keys
+                      already computed server-side from
+                      ARRHYTHMIA_REGION_MAP (app.py) for those
+                      classes, e.g. ["LV","RV"]
+   meta: optional { disease, confidence } for the status panel
+   ------------------------------------------------------------ */
+function updateMetaverseFromPrediction(predictedClasses, metaverseRegions, meta) {
+
+    predictedClasses =
+        Array.isArray(predictedClasses) ?
+            predictedClasses :
+            [predictedClasses].filter(Boolean);
+
+    metaverseRegions =
+        Array.isArray(metaverseRegions) ?
+            metaverseRegions :
+            [];
+
+    meta = meta || {};
+
+    // Unknown classes: ignore safely, just log a warning. This never
+    // touches the model or its 5 real output classes -- it only
+    // guards the Metaverse-side visualization from an unexpected value.
+    predictedClasses.forEach(function (cls) {
+        if (!KNOWN_PTBXL_CLASSES.includes(cls)) {
+            console.warn(
+                "updateMetaverseFromPrediction: ignoring unrecognized " +
+                "PTB-XL class:",
+                cls
+            );
+        }
+    });
+
+    currentPTBXLPredictionState = {
+        predicted_classes: predictedClasses,
+        regions: metaverseRegions,
+        confidence: meta.confidence,
+        timestamp: Date.now()
+    };
+
+    // NORM (and only NORM), or an empty prediction, means no abnormal
+    // region -- clear any previous highlight and show the explicit
+    // normal state.
+    const isAbnormal = !(
+        predictedClasses.length === 0 ||
+        (predictedClasses.length === 1 && predictedClasses[0] === "NORM")
+    );
+
+    if (!isAbnormal) {
+        setECGNormalState();
+        return;
+    }
+
+    waitForHeartModelReady(function () {
+        setECGAbnormalState(predictedClasses, metaverseRegions, meta);
+    });
+}
+
+/* Shared transform: turn a raw /api/arrhythmia/test JSON response
+   into a Metaverse update. Used by BOTH the initial on-load fetch
+   below and the BroadcastChannel listener further down, so the
+   prediction-to-visualization logic exists in exactly one place. */
+function applyArrhythmiaApiResult(result) {
+
+    if (!result || result.success === false) {
+        throw new Error(
+            (result && result.error) || "ECG prediction failed"
+        );
+    }
+
+    const predictedClasses =
+        Array.isArray(result.predicted_classes) ?
+            result.predicted_classes :
+            [result.class_code];
+
+    const regions =
+        Array.isArray(result.metaverse_regions) ?
+            result.metaverse_regions :
+            [];
+
+    updateMetaverseFromPrediction(
+        predictedClasses,
+        regions,
+        {
+            disease:
+                result.rhythm ||
+                result.class_name ||
+                result.status,
+            confidence: result.confidence
+        }
+    );
+}
+
+// The Metaverse does NOT call /api/arrhythmia/test itself -- per the
+// single-source-of-truth requirement, index.html is the only page
+// that calls that endpoint. This page only ever consumes the exact
+// result index.html hands it via sessionStorage/BroadcastChannel
+// below, so it can never display a prediction independent from (or
+// out of sync with) the dashboard.
+
+const PTBXL_ECG_STORAGE_KEY = "latest_ptbxl_ecg_prediction";
+
+// Guards against applying an older message out of order (e.g. a
+// slightly stale sessionStorage read racing a fresh broadcast).
+let lastAppliedPTBXLTimestamp = 0;
+
+/* Shared apply path used by both the sessionStorage check below and
+   the BroadcastChannel listener further down, so the try/catch/
+   unavailable-state handling and the "don't go backwards in time"
+   guard aren't duplicated in two places. */
+function handleIncomingArrhythmiaMessage(message) {
+
+    if (!message || typeof message !== "object") return;
+
+    const messageTimestamp = Number(message.timestamp) || 0;
+
+    if (messageTimestamp < lastAppliedPTBXLTimestamp) {
+        // An older message arrived after a newer one was already
+        // applied -- ignore it rather than regress the display.
+        return;
+    }
+
+    if (message.type === "PTBXL_ECG_PREDICTION") {
+
+        try {
+
+            console.log(
+                "PTB-XL ECG Result (from dashboard):",
+                message.result
+            );
+
+            applyArrhythmiaApiResult(message.result);
+
+            lastAppliedPTBXLTimestamp = messageTimestamp;
+
+        } catch (error) {
+
+            console.error(
+                "PTB-XL ECG Metaverse Error:",
+                error
+            );
+
+            // Never show a fake result or a random highlighted region
+            // on failure -- clear any abnormal highlight and show the
+            // explicit "unavailable" state.
+            currentPTBXLPredictionState = null;
+            setECGUnavailableState();
+            lastAppliedPTBXLTimestamp = messageTimestamp;
+        }
+
+    } else if (message.type === "PTBXL_ECG_ERROR") {
+
+        console.warn(
+            "Dashboard reported an ECG prediction error:",
+            message.error
+        );
+
+        currentPTBXLPredictionState = null;
+        setECGUnavailableState();
+        lastAppliedPTBXLTimestamp = messageTimestamp;
+    }
+}
+
+/* ------------------------------------------------------------
+   1) On load, check sessionStorage for the latest prediction the
+      dashboard already stored (this covers the Metaverse being
+      opened/navigated to AFTER the dashboard already fetched and
+      broadcast -- a BroadcastChannel message sent before this page
+      existed is otherwise lost). If found, apply it immediately.
+      Otherwise, show the explicit "waiting" state -- never a
+      fabricated or stale-looking result.
+   ------------------------------------------------------------ */
+(function applyStoredPTBXLResultOnLoad() {
+
+    let stored = null;
+
+    try {
+        stored = sessionStorage.getItem(PTBXL_ECG_STORAGE_KEY);
+    } catch (storageError) {
+        console.warn(
+            "Unable to read stored ECG prediction:",
+            storageError
+        );
+    }
+
+    if (!stored) {
+        setECGWaitingState();
+        return;
+    }
+
+    let message = null;
+
+    try {
+        message = JSON.parse(stored);
+    } catch (parseError) {
+        console.warn(
+            "Stored ECG prediction was not valid JSON:",
+            parseError
+        );
+    }
+
+    if (!message) {
+        setECGWaitingState();
+        return;
+    }
+
+    handleIncomingArrhythmiaMessage(message);
+})();
+
+/* ------------------------------------------------------------
+   2) Then listen for future BroadcastChannel messages so an already-
+      open Metaverse tab updates live when a new prediction arrives,
+      with no manual refresh.
+   ------------------------------------------------------------
+   index.html is the SINGLE SOURCE OF TRUTH: it is the only page that
+   calls the real /api/arrhythmia/test, and it stores + broadcasts its
+   exact, unmodified response every time it refreshes. This page only
+   ever reacts to that -- it never fetches, generates, guesses, or
+   independently calculates an ECG prediction of its own.
+
+   Same-origin only; if the browser doesn't support BroadcastChannel,
+   this silently does nothing and the Metaverse keeps whatever state
+   step 1 above already established.
+------------------------------------------------------------ */
+if ("BroadcastChannel" in window) {
+
+    const ptbxlEcgChannel =
+        new BroadcastChannel("ptbxl-ecg-channel");
+
+    ptbxlEcgChannel.onmessage = function (event) {
+        handleIncomingArrhythmiaMessage(event.data);
+    };
+}
+
+/* ============================================================
+   AI CARDIOVASCULAR RISK ASSESSMENT -> METAVERSE CONNECTION
+   ------------------------------------------------------------
+   Exactly the same architecture as the PTB-XL ECG pipeline above,
+   on a completely separate channel/state, so the two pipelines can
+   never be mixed together:
+
+     Dashboard "Analyze Cardiac Risk" form (age/BP/cholesterol/etc.)
+         -> existing /api/cardiac-risk model
+         -> Low / Moderate / High
+         -> setCardiacRiskState() (defined above)
+         -> cardiacRiskVisualizationGroup on the 3D heart
+            + camera focus + #cardiacRiskStatusPanel + #statPrediction
+
+   index.html (the dashboard) is the single source of truth for
+   /api/cardiac-risk -- this page never calls that endpoint itself,
+   it only ever consumes the exact result the dashboard already
+   received, via sessionStorage (covers opening/navigating to the
+   Metaverse AFTER the dashboard already analyzed risk) and
+   BroadcastChannel (covers an already-open Metaverse tab updating
+   live). A new risk result here only ever touches
+   cardiacRiskVisualizationGroup / #cardiacRiskStatusPanel / the
+   camera focus / #statPrediction -- it never clears ecgRegionMarkers
+   or the legacy ai3DRiskGroup/aiMultiRiskMarkers, and a new ECG
+   result never clears this. Both can be shown on the heart at the
+   same time.
+============================================================ */
+
+const CARDIAC_RISK_STORAGE_KEY = "latest_cardiac_risk_prediction";
+
+// Guards against applying an older message out of order, same
+// pattern as lastAppliedPTBXLTimestamp above.
+let lastAppliedCardiacRiskTimestamp = 0;
+
+/* Shared apply path used by both the sessionStorage check below and
+   the BroadcastChannel listener further down. Accepts either message
+   shape the dashboard might send:
+     message.type === "CARDIAC_RISK_PREDICTION"  -> message.result = {
+         success, probability, risk_level, prediction }
+     message.type === "CARDIOVASCULAR_RISK_UPDATE" -> the fields
+         (probability, risk_level, prediction) directly on message. */
+function handleIncomingCardiacRiskMessage(message) {
+
+    if (!message || typeof message !== "object") return;
+
+    const messageTimestamp = Number(message.timestamp) || 0;
+
+    if (messageTimestamp < lastAppliedCardiacRiskTimestamp) {
+        // An older message arrived after a newer one was already
+        // applied -- ignore it rather than regress the display.
+        return;
+    }
+
+    if (message.type === "CARDIAC_RISK_PREDICTION" ||
+        message.type === "CARDIOVASCULAR_RISK_UPDATE") {
+
+        try {
+
+            const result = message.result || message;
+
+            if (result.success === false) {
+                throw new Error(result.error || "Cardiac risk prediction failed");
+            }
+
+            console.log(
+                "[RISK] Metaverse received risk:",
+                result
+            );
+
+            // risk_level (or riskLevel) is the dashboard's own
+            // Low/Moderate/High classification (see
+            // predictCardiacRisk() in index.html) -- reused as-is
+            // rather than re-derived here, so the Metaverse can never
+            // disagree with what the dashboard displayed for the
+            // same result.
+            const riskLevel = result.risk_level || result.riskLevel;
+            const probability =
+                result.probability ??
+                result.abnormality_probability;
+
+            setCardiacRiskState(
+                riskLevel,
+                probability,
+                result.prediction,
+                messageTimestamp
+            );
+
+            console.log(
+                "[RISK] Metaverse risk state:",
+                currentCardiovascularRisk
+            );
+
+            console.log(
+                "[RISK] Risk visualization created:",
+                cardiacRiskVisualizationLevel
+            );
+
+            console.log(
+                "[RISK] Camera focus:",
+                cardiacRiskCameraFocused
+            );
+
+            lastAppliedCardiacRiskTimestamp = messageTimestamp;
+
+        } catch (error) {
+
+            console.error(
+                "Cardiovascular Risk Metaverse Error:",
+                error
+            );
+
+            // Never show a fake risk level or a leftover halo on
+            // failure -- clear any risk highlight, restore the
+            // camera, and show the explicit "unavailable" state.
+            currentCardiovascularRisk = null;
+            setCardiacRiskUnavailableState();
+            lastAppliedCardiacRiskTimestamp = messageTimestamp;
+        }
+
+    } else if (message.type === "CARDIAC_RISK_ERROR") {
+
+        console.warn(
+            "Dashboard reported a cardiovascular risk prediction error:",
+            message.error
+        );
+
+        currentCardiovascularRisk = null;
+        setCardiacRiskUnavailableState();
+        lastAppliedCardiacRiskTimestamp = messageTimestamp;
+    }
+}
+
+/* ------------------------------------------------------------
+   1) On load, check sessionStorage for the latest risk result the
+      dashboard already stored (covers the Metaverse being opened
+      AFTER "Analyze Cardiac Risk" already ran). If found, apply it
+      immediately. Otherwise, show the explicit "no risk data yet"
+      state -- never a fabricated risk level.
+   ------------------------------------------------------------ */
+(function applyStoredCardiacRiskResultOnLoad() {
+
+    let stored = null;
+
+    try {
+        stored = sessionStorage.getItem(CARDIAC_RISK_STORAGE_KEY);
+    } catch (storageError) {
+        console.warn(
+            "Unable to read stored cardiovascular risk result:",
+            storageError
+        );
+    }
+
+    if (!stored) {
+        setCardiacRiskWaitingState();
+        return;
+    }
+
+    let message = null;
+
+    try {
+        message = JSON.parse(stored);
+    } catch (parseError) {
+        console.warn(
+            "Stored cardiovascular risk result was not valid JSON:",
+            parseError
+        );
+    }
+
+    if (!message) {
+        setCardiacRiskWaitingState();
+        return;
+    }
+
+    handleIncomingCardiacRiskMessage(message);
+})();
+
+/* ------------------------------------------------------------
+   2) Then listen for future BroadcastChannel messages so an already-
+      open Metaverse tab updates live when a new "Analyze Cardiac
+      Risk" result arrives, with no manual refresh.
+   ------------------------------------------------------------
+   Same-origin only; if the browser doesn't support BroadcastChannel,
+   this silently does nothing and the Metaverse keeps whatever state
+   step 1 above already established.
+------------------------------------------------------------ */
+if ("BroadcastChannel" in window) {
+
+    const cardiacRiskChannel =
+        new BroadcastChannel("cardiac-risk-channel");
+
+    cardiacRiskChannel.onmessage = function (event) {
+        handleIncomingCardiacRiskMessage(event.data);
+    };
+}
+
 </script>
+
 
 
 /* ============================================================

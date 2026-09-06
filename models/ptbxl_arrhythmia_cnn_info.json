@@ -1,0 +1,119 @@
+{
+  "model_name": "PTB-XL 5-Superclass Multi-Label CNN",
+  "dataset": "PTB-XL",
+  "total_records": 21799,
+  "usable_records": 21388,
+  "excluded_records": 411,
+  "usable_patients": 18617,
+  "multi_label_records": 5144,
+  "class_names": [
+    "NORM",
+    "MI",
+    "STTC",
+    "CD",
+    "HYP"
+  ],
+  "class_descriptions": {
+    "NORM": "Normal ECG",
+    "MI": "Myocardial Infarction",
+    "STTC": "ST/T Change",
+    "CD": "Conduction Disturbance",
+    "HYP": "Hypertrophy"
+  },
+  "class_counts": {
+    "NORM": 9514,
+    "MI": 5469,
+    "STTC": 5235,
+    "CD": 4898,
+    "HYP": 2649
+  },
+  "train_records": 14920,
+  "validation_records": 3220,
+  "test_records": 3248,
+  "train_patients": 13031,
+  "validation_patients": 2793,
+  "test_patients": 2793,
+  "patient_leakage_verified": true,
+  "input_shape": [
+    1000,
+    12
+  ],
+  "num_leads": 12,
+  "num_samples": 1000,
+  "sampling_rate_hz": 100,
+  "waveform_source": "records100",
+  "normalization": {
+    "method": "per-lead z-score",
+    "statistics_source": "training split only",
+    "means": [
+      -0.0014187197666615248,
+      -0.0014034872874617577,
+      1.4721053958055563e-05,
+      0.001393821439705789,
+      -0.0006636501639150083,
+      -0.0006727398140355945,
+      0.0003884963516611606,
+      -0.0009228011476807296,
+      -0.001570248045027256,
+      -0.0019887923263013363,
+      -0.0011262460611760616,
+      -0.0012650418793782592
+    ],
+    "stds": [
+      0.1539415419101715,
+      0.16041253507137299,
+      0.1547691375017166,
+      0.13685597479343414,
+      0.1318688839673996,
+      0.13741964101791382,
+      0.23679375648498535,
+      0.336898535490036,
+      0.33006641268730164,
+      0.3052014708518982,
+      0.2691243886947632,
+      0.24040718376636505
+    ],
+    "training_waveforms_used": 14920
+  },
+  "architecture": [
+    "Input(1000,12)",
+    "Conv1D(32,7) + BatchNormalization + ReLU + MaxPooling1D",
+    "Conv1D(64,7) + BatchNormalization + ReLU + MaxPooling1D",
+    "Conv1D(128,5) + BatchNormalization + ReLU + MaxPooling1D",
+    "Conv1D(256,5) + BatchNormalization + ReLU + MaxPooling1D",
+    "GlobalAveragePooling1D",
+    "Dense(128,relu)",
+    "Dropout(0.4)",
+    "Dense(5,sigmoid)"
+  ],
+  "loss": "Weighted Binary Cross-Entropy",
+  "class_weights": {
+    "NORM": 1.2402402402402402,
+    "MI": 2.9450026441036488,
+    "STTC": 3.0609689711486117,
+    "CD": 3.419431279620853,
+    "HYP": 6.991430101767541
+  },
+  "optimizer": "Adam",
+  "learning_rate": 0.001,
+  "batch_size": 32,
+  "maximum_epochs": 50,
+  "epochs_completed": 19,
+  "early_stopping": {
+    "monitor": "val_loss",
+    "patience": 8,
+    "restore_best_weights": true
+  },
+  "reduce_lr_on_plateau": {
+    "monitor": "val_loss",
+    "factor": 0.5,
+    "patience": 4,
+    "min_lr": 1e-07
+  },
+  "random_seed": 42,
+  "threshold": 0.5,
+  "training_time_seconds": 1321.3566883000312,
+  "model_path": "C:\\Users\\Jaigo\\OneDrive\\Documents\\GitHub\\brain-signal-project\\models\\ptbxl_arrhythmia_cnn.keras",
+  "evaluation_path": "C:\\Users\\Jaigo\\OneDrive\\Documents\\GitHub\\brain-signal-project\\models\\ptbxl_evaluation.json",
+  "confusion_matrix_path": "C:\\Users\\Jaigo\\OneDrive\\Documents\\GitHub\\brain-signal-project\\models\\ptbxl_confusion_matrix.png"
+}

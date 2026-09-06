@@ -1,0 +1,326 @@
+.venv\Lib\site-packages\click\termui.py:568:    -   An RGB tuple of three integers in [0, 255]. The terminal must
+.venv\Lib\site-packages\jinja2\filters.py:1064:    three ul tags that represent columns:
+.venv\Lib\site-packages\pip\_internal\cli\cmdoptions.py:561:        return ((), "at most three version parts are allowed")
+.venv\Lib\site-packages\pip\_internal\cli\cmdoptions.py:604:    interpreter. The version can be specified using up to three dot-separated
+.venv\Lib\site-packages\pip\_internal\index\collector.py:116:    This consists of three parts:
+.venv\Lib\site-packages\pip\_internal\models\link.py:538:    Currently this does three things:
+.venv\Lib\site-packages\pip\_internal\operations\install\wheel.py:255:            logger.warning("RECORD line has more than three elements: %s", row)
+.venv\Lib\site-packages\pip\_internal\resolution\resolvelib\provider.py:70:    # some regular expression. But since pip's resolver only spits out three
+.venv\Lib\site-packages\pip\_internal\utils\misc.py:85:    three.
+.venv\Lib\site-packages\pip\_internal\utils\misc.py:90:    :return: a tuple of length three if `py_version_info` is non-None.
+.venv\Lib\site-packages\pip\_vendor\distlib\compat.py:670:        # Each link is stored as a list of length three:  [PREV, NEXT, KEY].
+.venv\Lib\site-packages\pip\_vendor\distlib\manifest.py:145:        # three are defined depends on the action; it'll be either
+.venv\Lib\site-packages\pip\_vendor\pygments\filters\__init__.py:299:        '\\textthreequarters'    : '\U000000be',
+.venv\Lib\site-packages\pip\_vendor\pygments\filters\__init__.py:314:        '\\<three>'                : '\U0001d7ef',
+.venv\Lib\site-packages\pip\_vendor\pygments\filters\__init__.py:633:        '\\<threequarters>'        : '\U000000be',
+.venv\Lib\site-packages\pip\_vendor\resolvelib\resolvers.py:48:    This holds three attributes:
+.venv\Lib\site-packages\pip\_vendor\resolvelib\resolvers.py:288:            state. For example, given three requirements A, B and C, with
+.venv\Lib\site-packages\pip\_vendor\resolvelib\resolvers.py:521:        is a tuple subclass with three public members:
+.venv\Lib\site-packages\pip\_vendor\rich\color.py:410:        """Create a truecolor from three color components in the range(0->255).
+.venv\Lib\site-packages\pip\_vendor\rich\color.py:474:                    f"expected three components in {original_color!r}"
+.venv\Lib\site-packages\pip\_vendor\rich\color_triplet.py:35:            Tuple[float, float, float]: A tuple of three normalized colour components.
+.venv\Lib\site-packages\pip\_vendor\rich\filesize.py:7:file size units, three different functions have been implemented.
+.venv\Lib\site-packages\pip\_vendor\rich\_emoji_codes.py:2259:    "three-thirty": "🕞",
+.venv\Lib\site-packages\pip\_vendor\rich\_emoji_codes.py:2260:    "three_o’clock": "🕒",
+.venv\Lib\site-packages\pip\_vendor\rich\_emoji_codes.py:2777:    "keycap_digit_three": "3⃣",
+.venv\Lib\site-packages\pip\_vendor\rich\_emoji_codes.py:3328:    "three": "3️⃣",
+.venv\Lib\site-packages\pip\_vendor\rich\_emoji_codes.py:3523:    "three_button_mouse": "🖱",
+.venv\Lib\site-packages\pip\_vendor\tomli\_parser.py:642:    first_three = src[pos : pos + 3]
+.venv\Lib\site-packages\pip\_vendor\tomli\_parser.py:643:    if first_three in {"inf", "nan"}:
+.venv\Lib\site-packages\pip\_vendor\tomli\_parser.py:644:        return pos + 3, parse_float(first_three)
+.venv\Lib\site-packages\pip\_vendor\typing_extensions.py:921:            TypedDict supports all three syntax forms described in its docstring.
+.venv\Lib\site-packages\pip\_vendor\urllib3\contrib\appengine.py:21:the best choice for your application. There are three options for using
+.venv\Lib\site-packages\pip\_vendor\urllib3\contrib\pyopenssl.py:14:use all three directly here we end up having relatively few packages required.
+.venv\Lib\site-packages\werkzeug\http.py:1334:    # three octal digits, which matches http.cookies, although the RFC suggests base64.
+.venv\Lib\site-packages\werkzeug\middleware\lint.py:307:            warn("Status code must be three digits.", WSGIWarning, stacklevel=3)
+.venv\Lib\site-packages\werkzeug\middleware\lint.py:311:                f"Invalid value for status {status!r}. Valid status strings are three"
+app.py:124:# and is not a substitute for clinical evaluation. ECG rhythm/arrhythmia
+app.py:388:# LOAD ECG ARRHYTHMIA CNN MODEL
+app.py:391:ARRHYTHMIA_MODEL_PATH = (
+app.py:392:    "models/ptbxl_arrhythmia_cnn.keras"
+app.py:407:ARRHYTHMIA_CLASSES = [
+app.py:415:ARRHYTHMIA_CLASS_NAMES = {
+app.py:429:ARRHYTHMIA_MODEL_ACCURACY = 58.04
+app.py:432:# PTB-XL CLASS -> METAVERSE ANATOMY REGION MAPPING
+app.py:438:# convention used only to decide which existing Metaverse anatomy
+app.py:444:# templates/metaverse.html (OVERVIEW_MARKER_POINTS / OVERVIEW_ANATOMY
+app.py:450:ARRHYTHMIA_REGION_MAP = {
+app.py:457:    # the Metaverse's own anatomy data).
+app.py:468:    # Hypertrophy -> Apex (the Metaverse's own Apex anatomy entry
+app.py:495:    "ECG model file path:", ARRHYTHMIA_MODEL_PATH,
+app.py:496:    "| exists:", os.path.exists(ARRHYTHMIA_MODEL_PATH)
+app.py:504:# argument 'input_axes'": arrhythmia_cnn_model.keras was saved by a
+app.py:561:ARRHYTHMIA_COMPAT_CUSTOM_OBJECTS = {
+app.py:571:def _load_arrhythmia_model():
+app.py:573:    if not os.path.exists(ARRHYTHMIA_MODEL_PATH):
+app.py:576:            + ARRHYTHMIA_MODEL_PATH + "'"
+app.py:583:            ARRHYTHMIA_MODEL_PATH,
+app.py:584:            custom_objects=ARRHYTHMIA_COMPAT_CUSTOM_OBJECTS,
+app.py:611:arrhythmia_model = _load_arrhythmia_model()
+app.py:1250:        input_data = pd.DataFrame(
+app.py:1499:        input_data = pd.DataFrame(
+app.py:1568:# ECG ARRHYTHMIA SETTINGS
+app.py:1610:# ARRHYTHMIA CNN PREDICTION
+app.py:1613:def predict_arrhythmia_from_beat(signal):
+app.py:1624:    if arrhythmia_model is None:
+app.py:1626:            "PTB-XL arrhythmia CNN model is not loaded"
+app.py:1713:        arrhythmia_model.predict(
+app.py:1738:    predicted_classes = [
+app.py:1739:        ARRHYTHMIA_CLASSES[i]
+app.py:1744:    if len(predicted_classes) == 0:
+app.py:1750:        predicted_classes = [
+app.py:1751:            ARRHYTHMIA_CLASSES[best_index]
+app.py:1763:        ARRHYTHMIA_CLASSES[best_index]
+app.py:1775:    if predicted_classes == ["NORM"]:
+app.py:1784:            ARRHYTHMIA_CLASS_NAMES[c]
+app.py:1785:            for c in predicted_classes
+app.py:1801:        ARRHYTHMIA_CLASSES
+app.py:1810:    # METAVERSE REGION MAPPING
+app.py:1812:    # Class-to-region visual mapping only (see ARRHYTHMIA_REGION_MAP
+app.py:1819:    metaverse_regions = []
+app.py:1821:    for predicted in predicted_classes:
+app.py:1823:        for region in ARRHYTHMIA_REGION_MAP.get(predicted, []):
+app.py:1825:            if region not in metaverse_regions:
+app.py:1827:                metaverse_regions.append(region)
+app.py:1834:        "predicted_classes":
+app.py:1835:            predicted_classes,
+app.py:1849:        "metaverse_regions":
+app.py:1850:            metaverse_regions
+app.py:1865:        "mit-bih-arrhythmia-database-1.0.0/"
+app.py:1874:    # This uses real PhysioNet MIT-BIH Arrhythmia Database records
+app.py:1892:            "MIT-BIH Arrhythmia Database record '"
+app.py:1897:            + "downloaded separately (mit-bih-arrhythmia-database-1.0.0) "
+app.py:2100:# METAVERSE ROUTE
+app.py:2103:@app.route("/metaverse")
+app.py:2105:def metaverse():
+app.py:2108:        "metaverse.html"
+app.py:2563:# ECG ARRHYTHMIA PREDICTION API
+app.py:2567:    "/api/arrhythmia",
+app.py:2571:def api_arrhythmia():
+app.py:2608:            predict_arrhythmia_from_beat(
+app.py:2639:                ARRHYTHMIA_MODEL_ACCURACY,
+app.py:2646:            "metaverse_regions":
+app.py:2648:                    "metaverse_regions"
+app.py:2669:            "Arrhythmia Prediction Error:",
+app.py:2685:# TEST ARRHYTHMIA CNN USING REAL MIT-BIH ECG
+app.py:2689:    "/api/arrhythmia/test"
+app.py:2692:def api_arrhythmia_test():
+app.py:2755:            predict_arrhythmia_from_beat(
+app.py:2774:            "predicted_classes":
+app.py:2775:                result["predicted_classes"],
+app.py:2790:                ARRHYTHMIA_MODEL_ACCURACY,
+app.py:2795:            "metaverse_regions":
+app.py:2796:                result["metaverse_regions"],
+convert_ecg.py:5:record = wfdb.rdrecord('mit-bih-arrhythmia-database-1.0.0/100')
+convert_ecg.py:6:# Convert signal to DataFrame
+convert_ecg.py:7:df = pd.DataFrame(record.p_signal)
+templates\index.html:52:        canvas{
+templates\index.html:293:        <a href="/metaverse">
+templates\index.html:305:                Open Metaverse
+templates\index.html:323:        <canvas id="chart"></canvas>
+templates\index.html:1025:    ❤️ ECG Arrhythmia Detection
+templates\index.html:1047:        <h3>Arrhythmia Class</h3>
+templates\index.html:1051:            id="arrhythmiaClass"
+templates\index.html:1065:            id="arrhythmiaConfidence"
+templates\index.html:1106:        <canvas id="ecgChart"></canvas>
+templates\index.html:2171:   ECG ARRHYTHMIA CHART
+templates\index.html:2283:   ECG ARRHYTHMIA CNN API
+templates\index.html:2286:async function updateArrhythmia(){
+templates\index.html:2292:                "/api/arrhythmia/test"
+templates\index.html:2299:                "Arrhythmia API failed"
+templates\index.html:2310:            "Arrhythmia Result:",
+templates\index.html:2344:                "arrhythmiaClass"
+templates\index.html:2372:                "arrhythmiaConfidence"
+templates\index.html:2462:            "Arrhythmia API Error:",
+templates\index.html:2487:updateArrhythmia();
+templates\login.html:349:    <p>AI-Based Cardiac Digital Twin and Metaverse</p>
+templates\metaverse.html:16:<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+templates\metaverse.html:18:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+templates\metaverse.html:20:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+templates\metaverse.html:23:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+templates\metaverse.html:24:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+templates\metaverse.html:25:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+templates\metaverse.html:26:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+templates\metaverse.html:27:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+templates\metaverse.html:28:<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+templates\metaverse.html:270:            <canvas id="ecgSparkline" width="150" height="42"></canvas>
+templates\metaverse.html:482:        symptoms: "Chest pain, arrhythmia, exertional shortness of breath.",
+templates\metaverse.html:540:      diseases: "Pulmonary Vein Stenosis, Atrial Fibrillation (common arrhythmia origin)",
+templates\metaverse.html:544:      recommendation: "Echocardiogram/CT venous imaging; cardiology evaluation for arrhythmia.",
+templates\metaverse.html:874:let heart = null;              // outer rig (always a THREE.Group, all views)
+templates\metaverse.html:883:const MODEL_TARGET_HEIGHT = 3.0; // shared normalized height for ALL three models, so Overview/
+templates\metaverse.html:902:    overview: { pos: new THREE.Vector3(0, 0.7, 6.6), target: new THREE.Vector3(0, 0.5, 0) },
+templates\metaverse.html:903:    exterior: { pos: new THREE.Vector3(0, 0.9, 6.4), target: new THREE.Vector3(0, 0.9, 0) },
+templates\metaverse.html:904:    interior: { pos: new THREE.Vector3(0, 0.9, 6.4), target: new THREE.Vector3(0, 0.9, 0) }
+templates\metaverse.html:917:    scene = new THREE.Scene();
+templates\metaverse.html:918:    scene.background = new THREE.Color(0x000000);
+templates\metaverse.html:921:    camera = new THREE.PerspectiveCamera(
+templates\metaverse.html:931:    renderer = new THREE.WebGLRenderer({
+templates\metaverse.html:939:    if(THREE.ACESFilmicToneMapping){
+templates\metaverse.html:940:        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+templates\metaverse.html:943:    if(THREE.sRGBEncoding){
+templates\metaverse.html:944:        renderer.outputEncoding = THREE.sRGBEncoding;
+templates\metaverse.html:950:    controls = new THREE.OrbitControls(camera, renderer.domElement);
+templates\metaverse.html:966:    const ambient = new THREE.AmbientLight(0xffffff, 1.6);
+templates\metaverse.html:972:    scene.fog = new THREE.FogExp2(0x00060c, 0.028);
+templates\metaverse.html:977:        if(THREE.EffectComposer && THREE.RenderPass && THREE.UnrealBloomPass){
+templates\metaverse.html:978:            composer = new THREE.EffectComposer(renderer);
+templates\metaverse.html:979:            composer.addPass(new THREE.RenderPass(scene, camera));
+templates\metaverse.html:981:            bloomPass = new THREE.UnrealBloomPass(
+templates\metaverse.html:982:                new THREE.Vector2(window.innerWidth, window.innerHeight),
+templates\metaverse.html:1024:    const geometry = new THREE.BufferGeometry();
+templates\metaverse.html:1025:    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+templates\metaverse.html:1027:    const material = new THREE.PointsMaterial({
+templates\metaverse.html:1033:        blending: THREE.AdditiveBlending,
+templates\metaverse.html:1037:    ambientParticles = new THREE.Points(geometry, material);
+templates\metaverse.html:1057:    platformGroup = new THREE.Group();
+templates\metaverse.html:1066:        const ring = new THREE.Mesh(
+templates\metaverse.html:1067:            new THREE.RingGeometry(inner, outer, 80),
+templates\metaverse.html:1068:            new THREE.MeshBasicMaterial({
+templates\metaverse.html:1072:                side: THREE.DoubleSide,
+templates\metaverse.html:1073:                blending: THREE.AdditiveBlending,
+templates\metaverse.html:1093:    const glowDisc = new THREE.Mesh(
+templates\metaverse.html:1094:        new THREE.CircleGeometry(2.9, 64),
+templates\metaverse.html:1095:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:1099:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:1356:    const worldBox = new THREE.Box3().setFromObject(loaded);
+templates\metaverse.html:1357:    const worldCenter = worldBox.getCenter(new THREE.Vector3());
+templates\metaverse.html:1358:    const sphere = worldBox.getBoundingSphere(new THREE.Sphere());
+templates\metaverse.html:1391:    const target = new THREE.Vector3(worldCenter.x, targetY, worldCenter.z);
+templates\metaverse.html:1392:    const camPos = new THREE.Vector3(worldCenter.x, camY, worldCenter.z + distance);
+templates\metaverse.html:1409:    const loader = new THREE.GLTFLoader();
+templates\metaverse.html:1433:            // centering + normalization pipeline, so all three heart models sit
+templates\metaverse.html:1438:            const box = new THREE.Box3().setFromObject(loaded);
+templates\metaverse.html:1439:            const size = box.getSize(new THREE.Vector3());
+templates\metaverse.html:1440:            const center = box.getCenter(new THREE.Vector3());
+templates\metaverse.html:1458:            const rig = new THREE.Group();
+templates\metaverse.html:1492:                const ovBox = new THREE.Box3().setFromObject(loaded);
+templates\metaverse.html:1493:                const ovSphere = ovBox.getBoundingSphere(new THREE.Sphere());
+templates\metaverse.html:1590:    { key: "LA",    label: "LA", pos: new THREE.Vector3(-0.615,  0.979, -0.161) },
+templates\metaverse.html:1591:    { key: "RA",    label: "RA", pos: new THREE.Vector3( 0.471,  0.899,  0.174) },
+templates\metaverse.html:1592:    { key: "LV",    label: "LV", pos: new THREE.Vector3(-0.452, -0.466,  0.395) },
+templates\metaverse.html:1593:    { key: "RV",    label: "RV", pos: new THREE.Vector3( 0.253, -0.546,  0.439) },
+templates\metaverse.html:1594:    { key: "AORTA", label: "Ao", pos: new THREE.Vector3(-0.126,  1.380, -0.002) },
+templates\metaverse.html:1595:    { key: "APEX",  label: "Ax", pos: new THREE.Vector3(-0.181, -1.429,  0.130) }
+templates\metaverse.html:1675:        const anchor = new THREE.Vector3(
+templates\metaverse.html:1756:    const camPos = worldAnchor.clone().add(new THREE.Vector3(0, 0.1, 2.4));
+templates\metaverse.html:1802:        const anchor = new THREE.Vector3(
+templates\metaverse.html:1834:const occlusionRaycaster = new THREE.Raycaster();
+templates\metaverse.html:1906:    const camPos = worldAnchor.clone().add(new THREE.Vector3(0, 0.1, 2.4));
+templates\metaverse.html:1959:    highlightSphere = new THREE.Mesh(
+templates\metaverse.html:1960:        new THREE.SphereGeometry(0.045, 24, 24),
+templates\metaverse.html:1961:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:1965:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:2167:const ecgCanvas = document.getElementById("ecgSparkline");
+templates\metaverse.html:2168:const ecgCtx = ecgCanvas.getContext("2d");
+templates\metaverse.html:2195:    ecgCtx.clearRect(0, 0, ecgCanvas.width, ecgCanvas.height);
+templates\metaverse.html:2200:    const w = ecgCanvas.width, h = ecgCanvas.height, mid = h / 2;
+templates\metaverse.html:2415:    ai3DRiskGroup = new THREE.Group();
+templates\metaverse.html:2418:    ai3DRiskCore = new THREE.Mesh(
+templates\metaverse.html:2419:        new THREE.SphereGeometry(0.075, 32, 32),
+templates\metaverse.html:2420:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:2424:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:2432:    ai3DRiskRing1 = new THREE.Mesh(
+templates\metaverse.html:2433:        new THREE.RingGeometry(0.10, 0.125, 48),
+templates\metaverse.html:2434:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:2438:            side: THREE.DoubleSide,
+templates\metaverse.html:2439:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:2448:    ai3DRiskRing2 = new THREE.Mesh(
+templates\metaverse.html:2449:        new THREE.RingGeometry(0.16, 0.18, 48),
+templates\metaverse.html:2450:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:2454:            side: THREE.DoubleSide,
+templates\metaverse.html:2455:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:2464:    ai3DRiskRing3 = new THREE.Mesh(
+templates\metaverse.html:2465:        new THREE.RingGeometry(0.23, 0.245, 48),
+templates\metaverse.html:2466:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:2470:            side: THREE.DoubleSide,
+templates\metaverse.html:2471:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:2480:    ai3DRiskLight = new THREE.PointLight(0xff2222, 2.5, 1.2);
+templates\metaverse.html:2761:        new THREE.Vector3();
+templates\metaverse.html:2993:            new THREE.Vector3(
+templates\metaverse.html:3298:    const group = new THREE.Group();
+templates\metaverse.html:3300:    const core = new THREE.Mesh(
+templates\metaverse.html:3301:        new THREE.SphereGeometry(0.075, 32, 32),
+templates\metaverse.html:3302:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:3306:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:3312:    const ring1 = new THREE.Mesh(
+templates\metaverse.html:3313:        new THREE.RingGeometry(0.10, 0.125, 48),
+templates\metaverse.html:3314:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:3318:            side: THREE.DoubleSide,
+templates\metaverse.html:3319:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:3325:    const ring2 = new THREE.Mesh(
+templates\metaverse.html:3326:        new THREE.RingGeometry(0.17, 0.19, 48),
+templates\metaverse.html:3327:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:3331:            side: THREE.DoubleSide,
+templates\metaverse.html:3332:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:3338:    const ring3 = new THREE.Mesh(
+templates\metaverse.html:3339:        new THREE.RingGeometry(0.24, 0.255, 48),
+templates\metaverse.html:3340:        new THREE.MeshBasicMaterial({
+templates\metaverse.html:3344:            side: THREE.DoubleSide,
+templates\metaverse.html:3345:            blending: THREE.AdditiveBlending,
+templates\metaverse.html:3635:        const focus = new THREE.Vector3();
+templates\metaverse.html:3655:                new THREE.Vector3(
+templates\metaverse.html:4037:   PTB-XL ARRHYTHMIA CNN -> METAVERSE CONNECTION (ADDITIVE)
+templates\metaverse.html:4040:   (/api/arrhythmia/test) to the existing multi-region AI risk
+templates\metaverse.html:4049:   The backend's "metaverse_regions" field (see ARRHYTHMIA_REGION_MAP
+templates\metaverse.html:4083:   updateMetaverseFromPrediction(predictedClasses, metaverseRegions, meta)
+templates\metaverse.html:4085:   Single entry point for driving the Metaverse from a PTB-XL CNN
+templates\metaverse.html:4099:        ARRHYTHMIA_REGION_MAP simply contributes no region for a
+templates\metaverse.html:4100:        class it doesn't recognize, so metaverseRegions just
+templates\metaverse.html:4108:   metaverseRegions: array of existing Metaverse anatomy keys
+templates\metaverse.html:4110:                      ARRHYTHMIA_REGION_MAP (app.py) for those
+templates\metaverse.html:4114:function updateMetaverseFromPrediction(predictedClasses, metaverseRegions, meta) {
+templates\metaverse.html:4121:    metaverseRegions =
+templates\metaverse.html:4122:        Array.isArray(metaverseRegions) ?
+templates\metaverse.html:4123:            metaverseRegions :
+templates\metaverse.html:4149:        regions: metaverseRegions,
+templates\metaverse.html:4161:   Metaverse using the existing region-highlighting system. */
+templates\metaverse.html:4167:            await fetch("/api/arrhythmia/test");
+templates\metaverse.html:4170:            throw new Error("Arrhythmia API failed");
+templates\metaverse.html:4175:        console.log("PTB-XL ECG Result (Metaverse):", result);
+templates\metaverse.html:4184:            Array.isArray(result.predicted_classes) ?
+templates\metaverse.html:4185:                result.predicted_classes :
+templates\metaverse.html:4189:            Array.isArray(result.metaverse_regions) ?
+templates\metaverse.html:4190:                result.metaverse_regions :
+templates\metaverse.html:4193:        updateMetaverseFromPrediction(
+templates\metaverse.html:4208:            "PTB-XL ECG Metaverse Error:",
+templates\metaverse.html:4213:        // failure -- return the Metaverse to its neutral state and
+templates\signup.html:345:    <p>AI-Based Cardiac Digital Twin and Metaverse</p>
+training\test_heart_disease.py:43:# Convert to dataframe in correct feature order
+training\test_heart_disease.py:44:patient_df = pd.DataFrame([patient])[features]
+training\test_ptbxl_cnn.py:58:    MODELS_DIR / "ptbxl_arrhythmia_cnn.keras"
+training\test_ptbxl_cnn.py:62:    MODELS_DIR / "ptbxl_arrhythmia_cnn_info.json"
+training\test_ptbxl_cnn.py:185:def load_metadata() -> Tuple[pd.DataFrame, pd.DataFrame]:
+training\test_ptbxl_cnn.py:244:    scp: pd.DataFrame,
+training\test_ptbxl_cnn.py:369:    db: pd.DataFrame,
+training\test_ptbxl_cnn.py:372:    pd.DataFrame,
+training\test_ptbxl_cnn.py:504:    labels = pd.DataFrame(
+training\test_ptbxl_cnn.py:634:    usable: pd.DataFrame,
+training\test_ptbxl_cnn.py:635:) -> pd.DataFrame:
+training\test_ptbxl_cnn.py:794:    df: pd.DataFrame,
+training\test_ptbxl_cnn.py:1111:    train_df: pd.DataFrame,
+training\test_ptbxl_cnn.py:1807:    df: pd.DataFrame,
+training\train_arrhythmia.py:29:    "mit-bih-arrhythmia-database-1.0.0"
+training\train_arrhythmia.py:473:        " ECG ARRHYTHMIA CLASSIFICATION MODEL"
+training\train_arrhythmia.py:798:        "arrhythmia_model.pkl"
+training\train_arrhythmia.py:848:        "arrhythmia_model_info.pkl"
+training\train_arrhythmia.py:911:        "\nArrhythmia training completed!"
+training\train_arrhythmia_cnn.py:56:    "mit-bih-arrhythmia-database-1.0.0"
+training\train_arrhythmia_cnn.py:753:        " ECG ARRHYTHMIA 1D CNN MODEL"
+training\train_arrhythmia_cnn.py:1047:        "arrhythmia_cnn_model.keras"
+training\train_arrhythmia_cnn.py:1296:        "arrhythmia_cnn_final.keras"
+training\train_arrhythmia_cnn.py:1316:            "MIT-BIH Arrhythmia Database",
+training\train_arrhythmia_cnn.py:1352:        "arrhythmia_cnn_info.json"
+training\train_heart_disease.py:92:importance = pd.DataFrame({
+training\train_ptbxl_cnn.py:58:    MODELS_DIR / "ptbxl_arrhythmia_cnn.keras"
+training\train_ptbxl_cnn.py:62:    MODELS_DIR / "ptbxl_arrhythmia_cnn_info.json"
+training\train_ptbxl_cnn.py:185:def load_metadata() -> Tuple[pd.DataFrame, pd.DataFrame]:
+training\train_ptbxl_cnn.py:244:    scp: pd.DataFrame,
+training\train_ptbxl_cnn.py:369:    db: pd.DataFrame,
+training\train_ptbxl_cnn.py:372:    pd.DataFrame,
+training\train_ptbxl_cnn.py:504:    labels = pd.DataFrame(
+training\train_ptbxl_cnn.py:634:    usable: pd.DataFrame,
+training\train_ptbxl_cnn.py:635:) -> pd.DataFrame:
+training\train_ptbxl_cnn.py:794:    df: pd.DataFrame,
+training\train_ptbxl_cnn.py:1111:    train_df: pd.DataFrame,
+training\train_ptbxl_cnn.py:1807:    df: pd.DataFrame,

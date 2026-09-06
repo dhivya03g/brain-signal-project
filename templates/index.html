@@ -1074,8 +1074,8 @@
 
         <h3>CNN Model Accuracy</h3>
 
-        <div class="value">
-            83.63%
+        <div class="value" id="cnnModelAccuracy">
+            58.04%
         </div>
 
     </div>
@@ -1296,6 +1296,23 @@ setInterval(
 /* ==================================================
    CARDIAC RISK PREDICTION
 ================================================== */
+
+/* ------------------------------------------------------------
+   Dashboard -> Metaverse cardiovascular-risk channel (additive).
+   ------------------------------------------------------------
+   Mirrors the existing ptbxlEcgChannel pattern used for the PTB-XL
+   ECG CNN further down this file, but on its OWN channel name so
+   the two prediction pipelines (cardiovascular risk vs. ECG) are
+   never mixed together in a single message. This page (the
+   dashboard) already calls the real, single source of truth
+   (/api/cardiac-risk) -- the exact result it receives is broadcast
+   as-is so the Metaverse never independently recomputes or guesses
+   a risk level of its own.
+------------------------------------------------------------ */
+const cardiacRiskChannel =
+    ("BroadcastChannel" in window) ?
+        new BroadcastChannel("cardiac-risk-channel") :
+        null;
 
 async function predictCardiacRisk(){
 
@@ -1798,6 +1815,72 @@ async function predictCardiacRisk(){
         }
 
 
+        // Persist + broadcast the EXACT values already computed and
+        // shown on this dashboard (never re-derived independently by
+        // the Metaverse) so the Metaverse's cardiovascular-risk
+        // visualization can never disagree with what the dashboard
+        // just displayed. Kept on its own "cardiac-risk-channel" /
+        // storage key so it never mixes with the ECG prediction
+        // message above.
+        console.log(
+            "[RISK] Dashboard calculated risk:",
+            probability,
+            displayRiskLevel,
+            predictionElement.innerText
+        );
+
+        const cardiacRiskMessage = {
+            type: "CARDIOVASCULAR_RISK_UPDATE",
+            timestamp: Date.now(),
+            result: {
+                success: true,
+                probability: probability,
+                risk_level: displayRiskLevel,
+                prediction: predictionElement.innerText
+            }
+        };
+
+        try{
+
+            sessionStorage.setItem(
+                "latest_cardiac_risk_prediction",
+                JSON.stringify(cardiacRiskMessage)
+            );
+
+        } catch(storageError){
+
+            console.warn(
+                "Unable to store cardiovascular risk result for the Metaverse:",
+                storageError
+            );
+
+        }
+
+        if(cardiacRiskChannel){
+
+            try{
+
+                cardiacRiskChannel.postMessage(
+                    cardiacRiskMessage
+                );
+
+                console.log(
+                    "[RISK] Risk broadcast:",
+                    cardiacRiskMessage
+                );
+
+            } catch(broadcastError){
+
+                console.warn(
+                    "Unable to broadcast cardiovascular risk result to Metaverse:",
+                    broadcastError
+                );
+
+            }
+
+        }
+
+
     }
 
     catch(error){
@@ -2283,13 +2366,38 @@ const ecgChart =
    ECG ARRHYTHMIA CNN API
 ================================================== */
 
+/* ------------------------------------------------------------
+   Dashboard -> Metaverse ECG prediction channel (additive).
+   ------------------------------------------------------------
+   The dashboard is the page that already calls the real, single
+   source of truth (/api/arrhythmia/test). Rather than have the
+   Metaverse guess or re-derive anything, the exact response this
+   page receives is broadcast as-is to any open Metaverse tab so it
+   updates live, with no manual refresh, and never duplicates the
+   prediction logic itself. BroadcastChannel is used because it is
+   the smallest reliable same-origin, cross-tab mechanism available
+   here -- no iframe/window reference exists between these two
+   pages (the Metaverse is opened via a plain link to /metaverse),
+   and nothing needs to persist to disk the way localStorage would.
+   If a browser doesn't support it, this page's own dashboard is
+   completely unaffected -- the Metaverse simply falls back to its
+   own on-load fetch of the same endpoint.
+------------------------------------------------------------ */
+const ptbxlEcgChannel =
+    ("BroadcastChannel" in window) ?
+        new BroadcastChannel("ptbxl-ecg-channel") :
+        null;
+
 async function updateArrhythmia(){
 
     try{
 
         const response =
             await fetch(
-                "/api/arrhythmia/test"
+                "/api/arrhythmia/test",
+                {
+                    credentials: "same-origin"
+                }
             );
 
 
@@ -2318,6 +2426,55 @@ async function updateArrhythmia(){
                 result.error ||
                 "ECG prediction failed"
             );
+
+        }
+
+
+        // Persist + broadcast the exact, real API response so the
+        // Metaverse always shows the SAME prediction, whether it is
+        // already open (BroadcastChannel, live) or opened afterward
+        // (sessionStorage, read on its own load). Only real,
+        // successful results are ever stored/broadcast -- never a
+        // fabricated or partial one, and only after this response
+        // has been fully received and validated above.
+        const ptbxlEcgMessage = {
+            type: "PTBXL_ECG_PREDICTION",
+            timestamp: Date.now(),
+            result: result
+        };
+
+        try{
+
+            sessionStorage.setItem(
+                "latest_ptbxl_ecg_prediction",
+                JSON.stringify(ptbxlEcgMessage)
+            );
+
+        } catch(storageError){
+
+            console.warn(
+                "Unable to store ECG prediction for the Metaverse:",
+                storageError
+            );
+
+        }
+
+        if(ptbxlEcgChannel){
+
+            try{
+
+                ptbxlEcgChannel.postMessage(
+                    ptbxlEcgMessage
+                );
+
+            } catch(broadcastError){
+
+                console.warn(
+                    "Unable to broadcast ECG prediction to Metaverse:",
+                    broadcastError
+                );
+
+            }
 
         }
 
@@ -2378,6 +2535,26 @@ async function updateArrhythmia(){
             "%";
 
 
+        const modelAccuracyElement =
+            document.getElementById(
+                "cnnModelAccuracy"
+            );
+
+        if(modelAccuracyElement){
+
+            const modelAccuracy =
+                Number(
+                    result.model_accuracy
+                );
+
+            modelAccuracyElement.innerText =
+                Number.isFinite(modelAccuracy) ?
+                    modelAccuracy.toFixed(2) + "%" :
+                    "--%";
+
+        }
+
+
         const alertElement =
             document.getElementById(
                 "ecgAlert"
@@ -2386,7 +2563,7 @@ async function updateArrhythmia(){
 
         if(
             result.class_code ===
-            "N"
+            "NORM"
         ){
 
             rhythmElement.className =
@@ -2478,6 +2655,35 @@ async function updateArrhythmia(){
             "Unable to retrieve ECG prediction: "
             +
             error.message;
+
+
+        // Tell any open Metaverse tab this prediction failed, so it
+        // clears any highlight instead of showing a stale one. (The
+        // last known-good prediction in sessionStorage is left as-is
+        // -- a transient fetch failure doesn't erase it -- but the
+        // live broadcast tells an open Metaverse tab to show
+        // "unavailable" right now rather than silently keep showing
+        // whatever it last had.)
+        if(ptbxlEcgChannel){
+
+            try{
+
+                ptbxlEcgChannel.postMessage({
+                    type: "PTBXL_ECG_ERROR",
+                    timestamp: Date.now(),
+                    error: error.message
+                });
+
+            } catch(broadcastError){
+
+                console.warn(
+                    "Unable to broadcast ECG error to Metaverse:",
+                    broadcastError
+                );
+
+            }
+
+        }
 
     }
 

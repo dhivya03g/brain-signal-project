@@ -389,8 +389,10 @@ else:
 # ============================================================
 
 ARRHYTHMIA_MODEL_PATH = (
-    "models/ptbxl_arrhythmia_cnn.keras"
+    "models/arrhythmia_cnn_model.keras"
 )
+
+ARRHYTHMIA_MODEL_ACCURACY = 83.63
 
 
 # IMPORTANT:
@@ -405,71 +407,28 @@ ARRHYTHMIA_MODEL_PATH = (
 # 4 = V
 
 ARRHYTHMIA_CLASSES = [
-    "NORM",
-    "MI",
-    "STTC",
-    "CD",
-    "HYP"
+    "F",
+    "N",
+    "Q",
+    "S",
+    "V"
 ]
+
 
 ARRHYTHMIA_CLASS_NAMES = {
 
-    "NORM": "Normal ECG",
+    "N": "Normal",
 
-    "MI": "Myocardial Infarction",
+    "S": "Supraventricular",
 
-    "STTC": "ST/T Change",
+    "V": "Ventricular",
 
-    "CD": "Conduction Disturbance",
+    "F": "Fusion",
 
-    "HYP": "Hypertrophy"
-
-}
-
-ARRHYTHMIA_MODEL_ACCURACY = 58.04
-
-# ------------------------------------------------------------
-# PTB-XL CLASS -> METAVERSE ANATOMY REGION MAPPING
-#
-# The PTB-XL CNN predicts diagnostic CLASSES only (NORM, MI, STTC,
-# CD, HYP). It does NOT provide precise anatomical localization --
-# it never identifies an exact coronary artery, myocardial segment,
-# or physical lesion. The mapping below is a class-to-region VISUAL
-# convention used only to decide which existing Metaverse anatomy
-# hotspot(s) should highlight/blink for a given diagnostic class. It
-# is not a claim that the CNN itself localized the finding to that
-# anatomy.
-#
-# Keys correspond to existing anatomy keys already defined in
-# templates/metaverse.html (OVERVIEW_MARKER_POINTS / OVERVIEW_ANATOMY
-# / EXTERIOR_ANATOMY / INTERIOR_ANATOMY), so the frontend can use
-# them directly to look up an on-model anchor with no extra mapping
-# needed on that side.
-# ------------------------------------------------------------
-
-ARRHYTHMIA_REGION_MAP = {
-
-    # Normal ECG -> no abnormal region, nothing highlighted.
-    "NORM": [],
-
-    # Myocardial Infarction -> Left Ventricle (most common site of
-    # infarction; LV is the chamber explicitly associated with MI in
-    # the Metaverse's own anatomy data).
-    "MI": ["LV"],
-
-    # ST/T Change -> Right Ventricle (diffuse repolarization change;
-    # RV strain/ischemia is a recognized cause of ST/T abnormality).
-    "STTC": ["RV"],
-
-    # Conduction Disturbance -> Right Atrium (home of the sinoatrial
-    # node, the origin of normal cardiac conduction).
-    "CD": ["RA"],
-
-    # Hypertrophy -> Apex (the Metaverse's own Apex anatomy entry
-    # names "Apical Hypertrophic Cardiomyopathy" explicitly).
-    "HYP": ["APEX"]
+    "Q": "Other"
 
 }
+
 
 # ------------------------------------------------------------
 # DIAGNOSTICS: TensorFlow/Keras versions + model file presence
@@ -518,8 +477,8 @@ print(
 # "output_axes" keys. This only changes how the initializer OBJECT
 # is constructed during deserialization; it does not alter, retrain,
 # or replace the model's learned weights, so the original trained
-# ECG model (and its real ~58.04% held-out test accuracy) is
-# preserved unchanged.
+# ECG model (and its real ~83.63% CNN accuracy) is preserved
+# unchanged.
 # ------------------------------------------------------------
 
 def _strip_incompatible_kwargs(kwargs):
@@ -581,8 +540,7 @@ def _load_arrhythmia_model():
 
         model = tf.keras.models.load_model(
             ARRHYTHMIA_MODEL_PATH,
-            custom_objects=ARRHYTHMIA_COMPAT_CUSTOM_OBJECTS,
-            compile=False
+            custom_objects=ARRHYTHMIA_COMPAT_CUSTOM_OBJECTS
         )
 
         print("ECG model loaded successfully")
@@ -1610,104 +1568,70 @@ def normalize_ecg_beat(beat):
 # ARRHYTHMIA CNN PREDICTION
 # ============================================================
 
-def predict_arrhythmia_from_beat(signal):
-    """
-    Predict using the trained PTB-XL 12-lead CNN.
-
-    Expected input:
-        1000 samples × 12 leads
-
-    Output classes:
-        NORM, MI, STTC, CD, HYP
-    """
+def predict_arrhythmia_from_beat(
+    beat
+):
 
     if arrhythmia_model is None:
+
         raise ValueError(
-            "PTB-XL arrhythmia CNN model is not loaded"
+            "Arrhythmia CNN model is not loaded"
         )
 
-    signal = np.asarray(
-        signal,
+
+    beat = np.asarray(
+        beat,
         dtype=np.float32
     )
 
-    # ---------------------------------------------------------
-    # Accept either:
-    #   (1000, 12)
-    # or
-    #   (12, 1000)
-    # ---------------------------------------------------------
 
-    if signal.shape == (12, 1000):
-        signal = signal.T
+    if len(beat) != ECG_BEAT_LENGTH:
 
-    if signal.shape != (1000, 12):
         raise ValueError(
-            "PTB-XL ECG must have shape "
-            "(1000, 12). Received: "
-            + str(signal.shape)
+
+            f"ECG beat must contain exactly "
+            f"{ECG_BEAT_LENGTH} samples"
+
         )
 
-    if not np.isfinite(signal).all():
+
+    if np.isnan(beat).any():
+
         raise ValueError(
-            "ECG contains NaN or infinite values"
+            "ECG beat contains NaN values"
         )
 
-    # ---------------------------------------------------------
-    # TRAINING-DERIVED NORMALIZATION
-    # ---------------------------------------------------------
 
-    means = np.asarray([
-        0.0112,
-        -0.0060,
-        -0.0138,
-        -0.0006,
-        0.0163,
-        -0.0102,
-        -0.0096,
-        0.0216,
-        0.0093,
-        -0.0012,
-        -0.0028,
-        0.0033
-    ], dtype=np.float32)
+    if np.isinf(beat).any():
 
-    stds = np.asarray([
-        0.8427,
-        0.3993,
-        0.3003,
-        0.6445,
-        0.5965,
-        0.2449,
-        0.6240,
-        0.7300,
-        0.4514,
-        0.4004,
-        0.4483,
-        0.5840
-    ], dtype=np.float32)
+        raise ValueError(
+            "ECG beat contains infinite values"
+        )
 
-    signal = (
-        signal - means.reshape(1, 12)
-    ) / stds.reshape(1, 12)
 
-    signal = signal.astype(
-        np.float32
+    # --------------------------------------------------------
+    # NORMALIZATION
+    # --------------------------------------------------------
+
+    beat = normalize_ecg_beat(
+        beat
     )
 
-    # ---------------------------------------------------------
-    # MODEL INPUT
-    # ---------------------------------------------------------
 
-    model_input = signal.reshape(
+    # CNN expects:
+    #
+    # (batch, 180, 1)
+
+    model_input = beat.reshape(
         1,
-        1000,
-        12
+        ECG_BEAT_LENGTH,
+        1
     )
 
-    # ---------------------------------------------------------
-    # PREDICTION
-    # ---------------------------------------------------------
+
+    # --------------------------------------------------------
+    # CNN PREDICTION
+    # --------------------------------------------------------
 
     probabilities = (
         arrhythmia_model.predict(
@@ -1716,123 +1640,82 @@ def predict_arrhythmia_from_beat(signal):
         )[0]
     )
 
-    probabilities = np.asarray(
-        probabilities,
-        dtype=np.float32
+
+    predicted_index = int(
+        np.argmax(
+            probabilities
+        )
     )
 
-    if probabilities.shape[0] != 5:
-        raise ValueError(
-            "Expected 5 PTB-XL model outputs, received "
-            + str(probabilities.shape)
-        )
-
-    # ---------------------------------------------------------
-    # MULTI-LABEL PREDICTION
-    # ---------------------------------------------------------
-
-    predicted_indices = np.where(
-        probabilities >= 0.50
-    )[0]
-
-    predicted_classes = [
-        ARRHYTHMIA_CLASSES[i]
-        for i in predicted_indices
-    ]
-
-    # If no class crosses 0.50, use the highest probability.
-    if len(predicted_classes) == 0:
-
-        best_index = int(
-            np.argmax(probabilities)
-        )
-
-        predicted_classes = [
-            ARRHYTHMIA_CLASSES[best_index]
-        ]
-
-    # ---------------------------------------------------------
-    # PRIMARY CLASS
-    # ---------------------------------------------------------
-
-    best_index = int(
-        np.argmax(probabilities)
-    )
 
     predicted_class = (
-        ARRHYTHMIA_CLASSES[best_index]
+        ARRHYTHMIA_CLASSES[
+            predicted_index
+        ]
     )
+
 
     confidence = round(
-        float(probabilities[best_index]) * 100,
+
+        float(
+            probabilities[
+                predicted_index
+            ]
+        ) * 100,
+
         2
+
     )
 
-    # ---------------------------------------------------------
-    # HUMAN-READABLE RESULT
-    # ---------------------------------------------------------
 
-    if predicted_classes == ["NORM"]:
+    rhythm_name = (
+        ARRHYTHMIA_CLASS_NAMES[
+            predicted_class
+        ]
+    )
 
-        rhythm_name = "Normal ECG"
 
-        status = "Normal ECG"
+    # --------------------------------------------------------
+    # STATUS
+    # --------------------------------------------------------
+
+    if predicted_class == "N":
+
+        status = "Normal ECG Rhythm"
 
     else:
 
-        rhythm_names = [
-            ARRHYTHMIA_CLASS_NAMES[c]
-            for c in predicted_classes
-        ]
+        status = "Arrhythmia Detected"
 
-        rhythm_name = ", ".join(
-            rhythm_names
-        )
 
-        status = "Cardiac Abnormality Detected"
-
-    # ---------------------------------------------------------
-    # ALL CLASS PROBABILITIES
-    # ---------------------------------------------------------
+    # --------------------------------------------------------
+    # PROBABILITY OF EACH CLASS
+    # --------------------------------------------------------
 
     class_probabilities = {}
+
 
     for index, class_code in enumerate(
         ARRHYTHMIA_CLASSES
     ):
 
-        class_probabilities[class_code] = round(
-            float(probabilities[index]) * 100,
+        class_probabilities[
+            class_code
+        ] = round(
+
+            float(
+                probabilities[index]
+            ) * 100,
+
             2
+
         )
 
-    # ---------------------------------------------------------
-    # METAVERSE REGION MAPPING
-    #
-    # Class-to-region visual mapping only (see ARRHYTHMIA_REGION_MAP
-    # above) -- not a claim of precise anatomical localization by
-    # the CNN. Regions from every predicted class are combined,
-    # de-duplicated, and order-preserved so multi-label predictions
-    # (e.g. STTC + CD) highlight every mapped region together.
-    # ---------------------------------------------------------
-
-    metaverse_regions = []
-
-    for predicted in predicted_classes:
-
-        for region in ARRHYTHMIA_REGION_MAP.get(predicted, []):
-
-            if region not in metaverse_regions:
-
-                metaverse_regions.append(region)
 
     return {
 
         "class_code":
             predicted_class,
-
-        "predicted_classes":
-            predicted_classes,
 
         "rhythm":
             rhythm_name,
@@ -1844,10 +1727,7 @@ def predict_arrhythmia_from_beat(signal):
             confidence,
 
         "probabilities":
-            class_probabilities,
-
-        "metaverse_regions":
-            metaverse_regions
+            class_probabilities
 
     }
 
@@ -2641,11 +2521,6 @@ def api_arrhythmia():
             "probabilities":
                 result[
                     "probabilities"
-                ],
-
-            "metaverse_regions":
-                result[
-                    "metaverse_regions"
                 ]
 
         })
@@ -2693,135 +2568,77 @@ def api_arrhythmia_test():
 
     try:
 
-        # -----------------------------------------------------
-        # Load one real PTB-XL record
-        # -----------------------------------------------------
-
-        database_path = (
-            "datasets/ptb-xl/ptbxl_database.csv"
+        record_number = request.args.get(
+            "record",
+            "100"
         )
 
-        db = pd.read_csv(
-            database_path,
-            index_col=0
-        )
 
-        if len(db) == 0:
-            raise ValueError(
-                "PTB-XL database is empty"
+        beat, actual_symbol = (
+            get_mitbih_ecg_beat(
+                record_number
             )
-
-        # Use the first real PTB-XL record.
-        row = db.iloc[0]
-
-        filename = str(
-            row["filename_lr"]
         )
 
-        record_path = (
-            "datasets/ptb-xl/"
-            + filename
-        )
-
-        # -----------------------------------------------------
-        # Load real PTB-XL waveform
-        # -----------------------------------------------------
-
-        record = wfdb.rdrecord(
-            record_path
-        )
-
-        signal = np.asarray(
-            record.p_signal,
-            dtype=np.float32
-        )
-
-        # -----------------------------------------------------
-        # Verify PTB-XL shape
-        # -----------------------------------------------------
-
-        if signal.shape != (1000, 12):
-
-            raise ValueError(
-                "PTB-XL waveform has unexpected shape: "
-                + str(signal.shape)
-            )
-
-        # -----------------------------------------------------
-        # Predict
-        # -----------------------------------------------------
 
         result = (
             predict_arrhythmia_from_beat(
-                signal
+                beat
             )
         )
 
-        # -----------------------------------------------------
-        # Return dashboard response
-        # -----------------------------------------------------
 
         return jsonify({
 
             "success": True,
 
             "record":
-                str(row.name),
+                record_number,
 
-            "model":
-                "PTB-XL 5-Superclass Multi-Label CNN",
-
-            "sampling_rate":
-                100,
-
-            "input_shape":
-                [1000, 12],
+            "actual_annotation":
+                actual_symbol,
 
             "class_code":
-                result["class_code"],
-
-            "predicted_classes":
-                result["predicted_classes"],
-
-            "class_name":
-                result["rhythm"],
+                result[
+                    "class_code"
+                ],
 
             "rhythm":
-                result["rhythm"],
+                result[
+                    "rhythm"
+                ],
 
             "status":
-                result["status"],
+                result[
+                    "status"
+                ],
 
             "confidence":
-                result["confidence"],
+                result[
+                    "confidence"
+                ],
 
             "model_accuracy":
                 ARRHYTHMIA_MODEL_ACCURACY,
 
-            # "predictions" is provided alongside "probabilities" for
-            # frontend field-name compatibility -- it is the exact
-            # same per-class CNN output, not a second calculation.
-            "predictions":
-                result["probabilities"],
-
             "probabilities":
-                result["probabilities"],
+                result[
+                    "probabilities"
+                ],
 
-            "metaverse_regions":
-                result["metaverse_regions"],
-
-            # First ECG lead for the dashboard chart.
             "ecg":
-                signal[:, 0].tolist()
+                beat
 
         })
+
 
     except Exception as e:
 
         print(
-            "PTB-XL ECG Test Error:",
+            "MIT-BIH ECG Test Error:",
             str(e)
         )
+
 
         return jsonify({
 

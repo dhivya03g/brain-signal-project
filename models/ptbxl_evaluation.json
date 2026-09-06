@@ -1,0 +1,176 @@
+{
+  "dataset": "PTB-XL",
+  "model": "PTB-XL 5-Superclass Multi-Label CNN",
+  "test_records": 3248,
+  "test_patients": 2793,
+  "class_names": [
+    "NORM",
+    "MI",
+    "STTC",
+    "CD",
+    "HYP"
+  ],
+  "metrics": {
+    "threshold": 0.5,
+    "accuracy_exact_match": 0.5803571428571429,
+    "macro_precision": 0.6925483463092001,
+    "macro_recall_sensitivity": 0.8065896033541184,
+    "macro_specificity": 0.8832607666176789,
+    "macro_f1": 0.7434047631712908,
+    "macro_roc_auc": 0.9266736815776426,
+    "per_class": {
+      "NORM": {
+        "precision": 0.824238578680203,
+        "recall_sensitivity": 0.919971671388102,
+        "specificity": 0.849128540305011,
+        "f1": 0.8694779116465864,
+        "roc_auc": 0.9511937053700925,
+        "confusion_matrix": [
+          [
+            1559,
+            277
+          ],
+          [
+            113,
+            1299
+          ]
+        ],
+        "support_positive": 1412,
+        "support_negative": 1836
+      },
+      "MI": {
+        "precision": 0.7404063205417607,
+        "recall_sensitivity": 0.7818831942789034,
+        "specificity": 0.904524699045247,
+        "f1": 0.7605797101449275,
+        "roc_auc": 0.9281285762419533,
+        "confusion_matrix": [
+          [
+            2179,
+            230
+          ],
+          [
+            183,
+            656
+          ]
+        ],
+        "support_positive": 839,
+        "support_negative": 2409
+      },
+      "STTC": {
+        "precision": 0.628673196794301,
+        "recall_sensitivity": 0.8836045056320401,
+        "specificity": 0.8297264189465088,
+        "f1": 0.7346514047866806,
+        "roc_auc": 0.9243685067747506,
+        "confusion_matrix": [
+          [
+            2032,
+            417
+          ],
+          [
+            93,
+            706
+          ]
+        ],
+        "support_positive": 799,
+        "support_negative": 2449
+      },
+      "CD": {
+        "precision": 0.7274881516587678,
+        "recall_sensitivity": 0.8078947368421052,
+        "specificity": 0.907556270096463,
+        "f1": 0.7655860349127181,
+        "roc_auc": 0.92692291419868,
+        "confusion_matrix": [
+          [
+            2258,
+            230
+          ],
+          [
+            146,
+            614
+          ]
+        ],
+        "support_positive": 760,
+        "support_negative": 2488
+      },
+      "HYP": {
+        "precision": 0.5419354838709678,
+        "recall_sensitivity": 0.6395939086294417,
+        "specificity": 0.9253679046951647,
+        "f1": 0.5867287543655413,
+        "roc_auc": 0.9027547053027365,
+        "confusion_matrix": [
+          [
+            2641,
+            213
+          ],
+          [
+            142,
+            252
+          ]
+        ],
+        "support_positive": 394,
+        "support_negative": 2854
+      }
+    },
+    "multilabel_confusion_matrix": [
+      [
+        [
+          1559,
+          277
+        ],
+        [
+          113,
+          1299
+        ]
+      ],
+      [
+        [
+          2179,
+          230
+        ],
+        [
+          183,
+          656
+        ]
+      ],
+      [
+        [
+          2032,
+          417
+        ],
+        [
+          93,
+          706
+        ]
+      ],
+      [
+        [
+          2258,
+          230
+        ],
+        [
+          146,
+          614
+        ]
+      ],
+      [
+        [
+          2641,
+          213
+        ],
+        [
+          142,
+          252
+        ]
+      ]
+    ]
+  },
+  "training_time_seconds": 1321.3566883000312,
+  "epochs_completed": 19,
+  "threshold": 0.5,
+  "confusion_matrix_figure_saved": true,
+  "confusion_matrix_figure": "C:\\Users\\Jaigo\\OneDrive\\Documents\\GitHub\\brain-signal-project\\models\\ptbxl_confusion_matrix.png"
+}
